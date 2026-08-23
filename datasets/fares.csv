@@ -1,0 +1,8 @@
+operator,base_fare,per_station,max_fare,entry_fee
+BTSC,17,3,65,17
+BEM,17,2.5,44,17
+EBM,15,3,45,15
+NBM,15,3,45,15
+SRTET,12,3,42,12
+AERA1,15,5,45,15
+MRTA,15,3,45,15
