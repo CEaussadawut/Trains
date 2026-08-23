@@ -1,303 +1,303 @@
-station_id,name_th,name_en,lat,lon,lines,coord_source,is_estimated,map_x,map_y,label_side
-N24,คูคต,Khu Khot,14.0071,100.647,SUKHUMVIT,anchor,0,801.3,89.9,left
-N23,แยก คปอ.,Yaek Kor Por Aor,13.9861,100.6403,SUKHUMVIT,interpolated,0,801.3,149.9,left
-N22,พิพิธภัณฑ์กองทัพอากาศ,Royal Thai Air Force Museum,13.9651,100.6336,SUKHUMVIT,interpolated,0,801.4,209.9,left
-N21,โรงพยาบาลภูมิพลอดุลยเดช,Bhumibol Adulyadej Hospital,13.9441,100.6269,SUKHUMVIT,interpolated,0,801.4,270.0,left
-N20,สะพานใหม่,Saphan Mai,13.9231,100.6202,SUKHUMVIT,anchor,0,801.5,330.1,right
-N19,สายหยุด,Sai Yud,13.907,100.611667,SUKHUMVIT,interpolated,0,759.3,372.7,left
-N18,พหลโยธิน 59,Phahon Yothin 59,13.8909,100.603133,SUKHUMVIT,interpolated,0,717.1,415.3,left
-N17,วัดพระศรีมหาธาตุ,Wat Phra Sri Mahathat,13.8748,100.5946,SUKHUMVIT,anchor,0,690.0,442.9,right
-N16,กรมทหารราบที่ 11,11th Infantry Regiment,13.867275,100.588875,SUKHUMVIT,interpolated,0,661.2,471.1,left
-N15,บางบัว,Bang Bua,13.85975,100.58315,SUKHUMVIT,interpolated,0,639.8,492.1,left
-N14,กรมป่าไม้,Royal Forest Department,13.852225,100.577425,SUKHUMVIT,interpolated,0,618.4,513.1,right
-N13,มหาวิทยาลัยเกษตรศาสตร์,Kasetsart University,13.8447,100.5717,SUKHUMVIT,anchor,0,596.9,534.2,right
-N12,เสนานิคม,Sena Nikhom,13.837675,100.56915,SUKHUMVIT,interpolated,0,575.7,555.5,right
-N11,รัชโยธิน,Ratchayothin,13.83065,100.5666,SUKHUMVIT,interpolated,0,553.5,577.6,left
-N10,พหลโยธิน 24,Phahon Yothin 24,13.823625,100.56405,SUKHUMVIT,interpolated,0,593.9,617.9,right
-N9,ห้าแยกลาดพร้าว,Ha Yaek Lat Phrao,13.8166,100.5615,SUKHUMVIT,anchor,0,542.8,617.9,left
-N8,หมอชิต,Mo Chit,13.8026,100.5537,SUKHUMVIT,anchor,0,545.0,673.4,left
-N7,สะพานควาย,Saphan Khwai,13.7938,100.5497,SUKHUMVIT,anchor,0,544.2,707.1,left
-N5,อารีย์,Ari,13.7797,100.5443,SUKHUMVIT,anchor,0,543.7,736.5,left
-N4,สนามเป้า,Sanam Pao,13.7729,100.5417,SUKHUMVIT,anchor,0,543.4,765.9,right
-N3,อนุสาวรีย์ชัยสมรภูมิ,Victory Monument,13.7649,100.5375,SUKHUMVIT,anchor,0,513.7,794.9,left
-N2,พญาไท,Phaya Thai,13.7566,100.5337,SUKHUMVIT,anchor,0,486.1,821.9,left
-N1,ราชเทวี,Ratchathewi,13.7519,100.5316,SUKHUMVIT,anchor,0,485.6,857.8,right
-CEN,สยาม,Siam,13.7455,100.534,SUKHUMVIT|SILOM,anchor,0,485.1,887.8,left
-E1,ชิดลม,Chit Lom,13.7441,100.5432,SUKHUMVIT,anchor,0,523.6,887.9,right
-E2,เพลินจิต,Phloen Chit,13.7432,100.5486,SUKHUMVIT,anchor,0,552.1,858.1,right
-E3,นานา,Nana,13.7404,100.5551,SUKHUMVIT,anchor,0,551.5,888.9,left
-E4,อโศก,Asok,13.7373,100.5601,SUKHUMVIT,anchor,0,571.9,909.4,left
-E5,พร้อมพงษ์,Phrom Phong,13.7304,100.5697,SUKHUMVIT,anchor,0,592.6,930.4,left
-E6,ทองหล่อ,Thong Lo,13.7241,100.5786,SUKHUMVIT,anchor,0,616.5,954.6,right
-E7,เอกมัย,Ekkamai,13.7195,100.5853,SUKHUMVIT,anchor,0,637.5,975.6,right
-E8,พระโขนง,Phra Khanong,13.7154,100.5917,SUKHUMVIT,anchor,0,658.5,996.7,left
-E9,อ่อนนุช,On Nut,13.7057,100.6013,SUKHUMVIT,anchor,0,679.6,1017.8,right
-E10,บางจาก,Bang Chak,13.6963,100.6046,SUKHUMVIT,anchor,0,679.4,1052.0,left
-E11,ปุณณวิถี,Punnawithi,13.6892,100.6094,SUKHUMVIT,anchor,0,700.5,1073.1,right
-E12,อุดมสุข,Udom Suk,13.6797,100.6096,SUKHUMVIT,anchor,0,677.6,1095.8,left
-E13,บางนา,Bang Na,13.668,100.6046,SUKHUMVIT,anchor,0,698.7,1116.9,right
-E14,แบริ่ง,Bearing,13.6614,100.6017,SUKHUMVIT,anchor,0,677.4,1138.2,left
-E15,สำโรง,Samrong,13.646,100.598,SUKHUMVIT,anchor,0,677.4,1191.8,left
-E16,ปู่เจ้า,Pu Chao,13.634125,100.598875,SUKHUMVIT,interpolated,0,677.5,1236.5,right
-E17,ช้างเอราวัณ,Chang Erawan,13.62225,100.59975,SUKHUMVIT,interpolated,0,677.7,1275.5,right
-E18,โรงเรียนนายเรือ,Royal Thai Naval Academy,13.610375,100.600625,SUKHUMVIT,interpolated,0,677.8,1314.3,right
-E19,ปากน้ำ,Pak Nam,13.5985,100.6015,SUKHUMVIT,anchor,0,677.8,1353.3,right
-E20,ศรีนครินทร์,Srinagarindra,13.585875,100.603,SUKHUMVIT,interpolated,0,677.9,1394.5,right
-E21,แพรกษา,Phraek Sa,13.57325,100.6045,SUKHUMVIT,interpolated,0,677.9,1435.8,right
-E22,สายลวด,Sai Luat,13.560625,100.606,SUKHUMVIT,interpolated,0,678.0,1477.0,right
-E23,เคหะฯ,Kheha,13.548,100.6075,SUKHUMVIT,anchor,0,678.0,1518.0,right
-W1,สนามกีฬาแห่งชาติ,National Stadium,13.7463,100.5296,SILOM,anchor,0,463.9,866.6,left
-S1,ราชดำริ,Ratchadamri,13.7397,100.5395,SILOM,anchor,0,505.8,908.8,right
-S2,ศาลาแดง,Sala Daeng,13.7286,100.5345,SILOM,anchor,0,484.2,929.6,left
-S3,ช่องนนทรี,Chong Nonsi,13.7237,100.529,SILOM,anchor,0,455.8,958.6,left
-S4,เซนต์หลุยส์,Saint Louis,13.7215,100.5232,SILOM,anchor,0,435.1,979.9,left
-S5,สุรศักดิ์,Surasak,13.7194,100.5163,SILOM,anchor,0,414.5,958.7,right
-S6,สะพานตากสิน,Saphan Taksin,13.7189,100.5142,SILOM,anchor,0,393.8,979.9,right
-S7,กรุงธนบุรี,Krung Thon Buri,13.7207,100.5015,SILOM,anchor,0,369.4,954.9,left
-S8,วงเวียนใหญ่,Wongwian Yai,13.7207,100.489,SILOM,anchor,0,348.4,933.6,right
-S9,โพธิ์นิมิตร,Pho Nimit,13.7182,100.4826,SILOM,interpolated,0,323.2,958.9,right
-S10,ตลาดพลู,Talat Phlu,13.7157,100.4762,SILOM,anchor,0,292.0,990.2,left
-S11,วุฒากาศ,Wutthakat,13.71815,100.46705,SILOM,interpolated,0,264.0,962.3,right
-S12,บางหว้า,Bang Wa,13.7206,100.4579,SILOM,anchor,0,222.0,962.3,left
-G1,กรุงธนบุรี,Krung Thon Buri,13.7207,100.5015,GOLD,anchor,0,379.2,964.6,left
-G2,เจริญนคร,Charoen Nakhon,13.7264,100.51,GOLD,anchor,0,406.8,937.0,right
-G3,คลองสาน,Khlong San,13.73,100.51,GOLD,anchor,0,406.9,907.0,right
-BL01,ท่าพระ,Tha Phra,13.7294,100.4742,BLUE,anchor,0,297.5,933.1,right
-BL02,จรัญฯ 13,Charan 13,13.742367,100.474033,BLUE,interpolated,0,297.6,883.9,left
-BL03,ไฟฉาย,Fai Chai,13.755333,100.473867,BLUE,interpolated,0,297.8,843.7,left
-BL04,บางขุนนนท์,Bang Khun Non,13.7683,100.4737,BLUE,anchor,0,298.1,802.1,left
-BL05,บางยี่ขัน,Bang Yi Khan,13.7733,100.48085,BLUE,interpolated,0,318.5,780.4,left
-BL06,สิรินธร,Sirindhorn,13.7783,100.488,BLUE,anchor,0,338.9,758.5,left
-BL07,บางพลัด,Bang Phlat,13.787533,100.499,BLUE,interpolated,0,360.2,735.6,right
-BL08,บางอ้อ,Bang O,13.796767,100.51,BLUE,interpolated,0,381.0,713.3,left
-BL09,บางโพ,Bang Pho,13.806,100.521,BLUE,anchor,0,403.4,689.2,right
-BL10,เตาปูน,Tao Poon,13.806,100.529,BLUE,anchor,0,422.8,667.8,right
-BL11,บางซื่อ,Bang Sue,13.8028,100.538,BLUE,anchor,0,442.5,689.6,left
-BL12,กำแพงเพชร,Kamphaeng Phet,13.8025,100.546,BLUE,interpolated,0,502.6,688.5,right
-BL13,สวนจตุจักร,Chatuchak Park,13.8022,100.554,BLUE,anchor,0,548.2,687.6,right
-BL14,พหลโยธิน,Phahon Yothin,13.8135,100.5601,BLUE,anchor,0,551.5,652.5,left
-BL15,ลาดพร้าว,Lat Phrao,13.8163,100.5619,BLUE,anchor,0,555.0,618.0,left
-BL16,รัชดาภิเษก,Ratchadaphisek,13.803467,100.566067,BLUE,interpolated,0,597.7,658.4,right
-BL17,สุทธิสาร,Sutthisan,13.790633,100.570233,BLUE,interpolated,0,599.6,717.7,left
-BL18,ห้วยขวาง,Huai Khwang,13.7778,100.5744,BLUE,anchor,0,601.8,767.5,right
-BL19,ศูนย์วัฒนธรรมแห่งประเทศไทย,Thailand Cultural Centre,13.7666,100.5697,BLUE,anchor,0,603.9,811.5,right
-BL20,พระราม 9,Phra Ram 9,13.758,100.5654,BLUE,anchor,0,577.4,838.4,left
-BL21,เพชรบุรี,Phetchaburi,13.7486,100.5657,BLUE,anchor,0,616.0,876.9,right
-BL22,สุขุมวิท,Sukhumvit,13.7385,100.5615,BLUE,anchor,0,585.5,909.0,left
-BL23,ศูนย์การประชุมแห่งชาติสิริกิติ์,Queen Sirikit National Convention Centre,13.7231,100.5601,BLUE,anchor,0,585.5,961.5,right
-BL24,คลองเตย,Khlong Toei,13.7226,100.5533,BLUE,anchor,0,545.2,961.5,left
-BL25,ลุมพินี,Lumphini,13.7256,100.5457,BLUE,anchor,0,522.6,938.8,right
-BL26,สีลม,Si Lom,13.7292,100.5364,BLUE,anchor,0,493.3,938.9,right
-BL27,สามย่าน,Sam Yan,13.7325,100.5296,BLUE,anchor,0,461.3,906.8,left
-BL28,หัวลำโพง,Hua Lamphong,13.7377,100.517,BLUE,anchor,0,431.3,906.8,left
-BL29,วัดมังกร,Wat Mangkon,13.743,100.51,BLUE,anchor,0,410.0,885.6,right
-BL30,สามยอด,Sam Yot,13.7452,100.5015,BLUE,anchor,0,379.9,885.7,right
-BL31,สนามไชย,Sanam Chai,13.744,100.494,BLUE,anchor,0,344.8,885.6,left
-BL32,อิสรภาพ,Itsaraphap,13.74,100.4855,BLUE,anchor,0,323.6,906.9,right
-BL34,บางไผ่,Bang Phai,13.7303,100.4717,BLUE,interpolated,0,265.3,933.1,left
-BL35,บางหว้า,Bang Wa,13.7206,100.4579,BLUE,anchor,0,236.0,962.3,right
-BL36,เพชรเกษม 48,Phetkasem 48,13.717067,100.4416,BLUE,interpolated,0,185.3,962.3,right
-BL37,ภาษีเจริญ,Phasi Charoen,13.713533,100.4253,BLUE,interpolated,0,133.2,962.3,left
-BL38,บางแค,Bang Khae,13.71,100.409,BLUE,anchor,0,87.6,962.3,left
-BL39,หลักสอง,Lak Song,13.706,100.4045,BLUE,anchor,0,55.7,994.2,left
-PP01,คลองบางไผ่,Khlong Bang Phai,13.8783,100.403,PURPLE,anchor,0,60.9,506.6,left
-PP02,ตลาดบางใหญ่,Talad Bang Yai,13.874686,100.415143,PURPLE,interpolated,0,98.5,506.6,left
-PP03,สามแยกบางใหญ่,Sam Yaek Bang Yai,13.871071,100.427286,PURPLE,interpolated,0,136.9,506.7,left
-PP04,บางพลู,Bang Phlu,13.867457,100.439429,PURPLE,interpolated,0,176.2,506.8,left
-PP05,บางรักใหญ่,Bang Rak Yai,13.863843,100.451571,PURPLE,interpolated,0,215.7,507.0,right
-PP06,บางรักน้อย-ท่าอิฐ,Bang Rak Noi Tha It,13.860229,100.463714,PURPLE,interpolated,0,255.1,507.3,right
-PP07,ไทรม้า,Sai Ma,13.856614,100.475857,PURPLE,interpolated,0,292.2,507.6,right
-PP08,สะพานพระนั่งเกล้า,Phra Nang Klao Bridge,13.853,100.488,PURPLE,anchor,0,325.3,508.1,right
-PP09,แยกนนทบุรี 1,Yaek Nonthaburi 1,13.855333,100.496667,PURPLE,interpolated,0,355.3,508.6,right
-PP10,บางกระสอ,Bang Krasor,13.857667,100.505333,PURPLE,interpolated,0,385.3,509.2,left
-PP11,ศูนย์ราชการนนทบุรี,Nonthaburi Civic Center,13.86,100.514,PURPLE,anchor,0,418.6,509.8,right
-PP12,กระทรวงสาธารณสุข,Ministry of Public Health,13.85125,100.51675,PURPLE,interpolated,0,418.4,539.8,left
-PP13,แยกติวานนท์,Yaek Tiwanon,13.8425,100.5195,PURPLE,interpolated,0,418.4,569.8,left
-PP14,วงศ์สว่าง,Wong Sawang,13.83375,100.52225,PURPLE,interpolated,0,418.6,628.3,right
-PP15,บางซ่อน,Bang Son,13.825,100.525,PURPLE,anchor,0,376.6,670.8,left
-PP16,เตาปูน,Tao Poon,13.806,100.529,PURPLE|PURPLE_S,anchor,0,409.1,668.8,right
-YL01,ลาดพร้าว,Lat Phrao,13.8163,100.5619,YELLOW,anchor,0,565.5,629.3,left
-YL02,ภาวนา,Phawana,13.809114,100.573629,YELLOW,interpolated,0,608.4,672.8,right
-YL03,โชคชัย 4,Chok Chai 4,13.801929,100.585357,YELLOW,interpolated,0,633.8,698.6,left
-YL04,ลาดพร้าว 71,Lat Phrao 71,13.794743,100.597086,YELLOW,interpolated,0,664.2,729.3,right
-YL05,ลาดพร้าว 83,Lat Phrao 83,13.787557,100.608814,YELLOW,interpolated,0,689.8,755.1,left
-YL06,มหาดไทย,Mahat Thai,13.780371,100.620543,YELLOW,interpolated,0,726.7,792.1,right
-YL07,ลาดพร้าว 101,Lat Phrao 101,13.773186,100.632271,YELLOW,interpolated,0,756.7,792.1,left
-YL08,บางกะปิ,Bang Kapi,13.766,100.644,YELLOW,anchor,0,789.9,792.1,right
-YL09,แยกลำสาลี,Yaek Lam Sali,13.762,100.644,YELLOW,anchor,0,789.9,845.5,left
-YL10,ศรีกรีฑา,Si Kritha,13.755,100.644,YELLOW,interpolated,0,789.5,873.9,right
-YL11,หัวหมาก,Hua Mak,13.748,100.644,YELLOW,anchor,0,728.0,870.6,left
-YL12,กลันตัน,Kalantan,13.7395,100.640167,YELLOW,interpolated,0,779.6,867.9,right
-YL13,ศรีนุช,Si Nut,13.731,100.636333,YELLOW,interpolated,0,780.8,926.0,left
-YL14,ศรีนครินทร์ 38,Srinagarindra 38,13.7225,100.6325,YELLOW,interpolated,0,782.2,967.9,right
-YL15,สวนหลวง ร.9,Suan Luang Rama IX,13.714,100.628667,YELLOW,interpolated,0,762.4,989.0,right
-YL16,ศรีนครินทร์ 55,Sinakharin 55,13.7055,100.624833,YELLOW,interpolated,0,742.4,1009.9,right
-YL17,ศรีอุดม,Si Udom,13.697,100.621,YELLOW,interpolated,0,722.2,1030.7,right
-YL18,ศรีเอี่ยม,Si Iam,13.6885,100.617167,YELLOW,interpolated,0,701.7,1051.4,left
-YL19,ศรีลาซาล,Si La Salle,13.68,100.613333,YELLOW,interpolated,0,728.1,1076.8,right
-YL20,ศรีแบริ่ง,Si Bearing,13.6715,100.6095,YELLOW,interpolated,0,707.3,1097.6,left
-YL21,ศรีด่าน,Si Dan,13.663,100.605667,YELLOW,interpolated,0,707.7,1146.6,right
-YL22,ศรีเทพา,Si Thepha,13.6545,100.601833,YELLOW,interpolated,0,686.8,1167.8,left
-YL23,สำโรง,Samrong,13.646,100.598,YELLOW,anchor,0,687.0,1201.7,right
-PK01,ศูนย์ราชการนนทบุรี,Nonthaburi Civic Center,13.86,100.514,PINK,anchor,0,409.1,519.7,left
-PK02,แคราย,Khae Rai,13.8696,100.5108,PINK,interpolated,0,409.5,479.1,right
-PK03,สนามบินน้ำ,Sanambin Nam,13.8792,100.5076,PINK,interpolated,0,369.2,438.9,left
-PK04,สามัคคี,Samakkhi,13.8888,100.5044,PINK,interpolated,0,369.2,403.5,left
-PK05,กรมชลประทาน,Royal Irrigation Department,13.8984,100.5012,PINK,interpolated,0,369.2,373.5,left
-PK06,แยกปากเกร็ด,Yaek Pak Kret,13.908,100.498,PINK,anchor,0,369.1,326.1,left
-PK07,เลี่ยงเมืองปากเกร็ด,Pak Kret Bypass,13.908625,100.508375,PINK,interpolated,0,405.8,326.1,right
-PK08,แจ้งวัฒนะ-ปากเกร็ด 28,Chaeng Watthana Pak Kret 28,13.90925,100.51875,PINK,interpolated,0,435.8,326.1,left
-PK09,ศรีรัช,Si Rat,13.909875,100.529125,PINK,interpolated,0,465.9,326.1,left
-PK10,เมืองทองธานี,Muang Thong Thani,13.9105,100.5395,PINK|PINK_MT,anchor,0,514.4,326.1,left
-PK11,แจ้งวัฒนะ 14,Chaeng Watthana 14,13.904125,100.548625,PINK,interpolated,0,536.7,348.3,right
-PK12,ศูนย์ราชการเฉลิมพระเกียรติ,Government Complex,13.89775,100.55775,PINK,interpolated,0,558.2,369.7,left
-PK13,โทรคมนาคมแห่งชาติ,National Telecom,13.891375,100.566875,PINK,interpolated,0,584.7,396.1,left
-PK14,หลักสี่,Lak Si,13.885,100.576,PINK,anchor,0,623.0,434.2,right
-PK15,ราชภัฏพระนคร,Rachaphruek,13.8799,100.5853,PINK,interpolated,0,666.7,433.7,right
-PK16,วัดพระศรีมหาธาตุ,Wat Phra Sri Mahathat,13.8748,100.5946,PINK,anchor,0,691.0,457.2,left
-PK17,รามอินทรา 3,Ram Inthra 3,13.871156,100.604089,PINK,interpolated,0,735.1,499.2,left
-PK18,ลาดปลาเค้า,Lat Pla Khao,13.867511,100.613578,PINK,interpolated,0,797.0,498.8,right
-PK19,รามอินทรา 31,Ram Inthra 31,13.863867,100.623067,PINK,interpolated,0,858.7,498.4,right
-PK20,มัยลาภ,Maiyalap,13.860222,100.632556,PINK,interpolated,0,823.5,533.8,left
-PK21,วัดพระยาสุเรนทร์,Wat Phraya Suren,13.856578,100.642044,PINK,interpolated,0,844.8,512.7,left
-PK22,รามอินทรา 40,Ram Inthra 40,13.852933,100.651533,PINK,interpolated,0,867.0,534.4,right
-PK23,คู้บอน,Khu Bon,13.849289,100.661022,PINK,interpolated,0,888.2,555.4,left
-PK24,รามอินทรา 83,Ram Inthra 83,13.845644,100.670511,PINK,interpolated,0,929.2,513.8,right
-PK25,วงแหวนรามอินทรา,Wong Waen Ram Inthra,13.842,100.68,PINK,anchor,0,958.8,513.4,right
-PK26,นพรัตน์,Nopparat,13.8364,100.691,PINK,interpolated,0,979.6,534.2,right
-PK27,บางชัน,Bang Chan,13.8308,100.702,PINK,interpolated,0,1000.3,554.9,left
-PK28,เศรษฐบุตรบำเพ็ญ,Setthabutbamphen,13.8252,100.713,PINK,interpolated,0,1021.1,575.6,left
-PK29,ตลาดมีนบุรี,Min Buri Market,13.8196,100.724,PINK,interpolated,0,1042.0,596.4,left
-PK30,มีนบุรี,Min Buri,13.814,100.735,PINK,anchor,0,1066.4,620.8,right
-MT01,อิมแพ็ค เมืองทองธานี,Impact Muang Thong Thani,13.913,100.547,PINK_MT,anchor,0,549.5,326.1,right
-MT02,ทะเลสาบเมืองทองธานี,Muang Thong Thani Lake,13.918,100.551,PINK_MT,anchor,0,572.5,303.1,right
-RN01,กลางกรุงเทพอภิวัฒน์,Krung Thep Aphiwat Central Terminal,13.8028,100.538,DARKRED,anchor,0,442.4,674.3,right
-RN02,จตุจักร,Chatuchak,13.818,100.548,DARKRED,anchor,0,443.1,614.1,left
-RN03,วัดเสมียนนารี,Wat Samian Nari,13.83475,100.555,DARKRED,interpolated,0,486.1,571.5,right
-RN04,บางเขน,Bang Khen,13.8515,100.562,DARKRED,interpolated,0,528.8,528.9,right
-RN05,ทุ่งสองห้อง,Thung Song Hong,13.86825,100.569,DARKRED,interpolated,0,570.8,486.9,left
-RN06,หลักสี่,Lak Si,13.885,100.576,DARKRED,anchor,0,613.2,444.3,left
-RN07,การเคหะ,Kan Kheha,13.899,100.588,DARKRED,interpolated,0,655.3,402.3,left
-RN08,ดอนเมือง,Don Mueang,13.913,100.6,DARKRED,anchor,0,697.8,359.9,right
-RN09,หลักหก,Lak Hok,13.9495,100.609,DARKRED,interpolated,0,697.8,300.0,right
-RN10,รังสิต,Rangsit,13.986,100.618,DARKRED|DARKRED_N,anchor,0,697.8,240.0,right
-RW01,กลางกรุงเทพอภิวัฒน์,Krung Thep Aphiwat Central Terminal,13.8028,100.538,LIGHTRED,anchor,0,431.0,682.7,right
-RW02,บางซ่อน,Bang Son,13.825,100.525,LIGHTRED,anchor,0,367.2,683.1,left
-RW03,บางบำหรุ,Bang Bamru,13.79,100.47,LIGHTRED,anchor,0,304.3,686.0,left
-RW04,ตลิ่งชัน,Taling Chan,13.779,100.436,LIGHTRED|LIGHTRED_W|LIGHTRED_S,anchor,0,241.7,688.7,left
-A8,พญาไท,Phaya Thai,13.7566,100.5337,ARL,anchor,0,496.4,831.7,left
-A7,ราชปรารภ,Ratchaprarop,13.758,100.541,ARL,anchor,0,539.4,874.2,left
-A6,มักกะสัน,Makkasan,13.751,100.562,ARL,anchor,0,600.4,874.7,left
-A5,รามคำแหง,Ramkhamhaeng,13.753,100.62,ARL,anchor,0,661.1,876.7,left
-A4,หัวหมาก,Hua Mak,13.748,100.644,ARL,anchor,0,713.5,874.1,left
-A3,บ้านทับช้าง,Ban Thap Chang,13.742,100.679,ARL,anchor,0,763.1,874.9,left
-A2,ลาดกระบัง,Lat Krabang,13.728,100.75,ARL,anchor,0,824.2,875.3,left
-A1,สุวรรณภูมิ,Suvarnabhumi,13.6961,100.7472,ARL,anchor,0,885.5,875.5,right
-OR01,บางขุนนนท์,Bang Khun Non,13.7683,100.4737,ORANGE_W,anchor,1,289.3,792.6,left
-OR02,ศิริราช,Siriraj,13.758,100.4855,ORANGE_W,anchor,1,313.7,816.4,left
-OR03,สนามหลวง,Sanam Luang,13.7565,100.493,ORANGE_W,anchor,1,342.2,846.0,left
-OR04,อนุสาวรีย์ประชาธิปไตย,Democracy Monument,13.7565,100.5015,ORANGE_W,anchor,1,371.9,846.5,left
-OR05,หลานหลวง,Lan Luang,13.75625,100.51,ORANGE_W,interpolated,1,413.7,847.0,right
-OR06,ยมราช,Yommarat,13.756,100.5185,ORANGE_W,anchor,1,443.7,847.4,left
-OR07,ราชเทวี,Ratchathewi,13.7519,100.5316,ORANGE_W,anchor,1,475.7,847.8,left
-OR08,ประตูน้ำ,Pratunam,13.7513,100.5405,ORANGE_W,anchor,1,528.6,848.0,right
-OR09,ราชปรารภ,Ratchaprarop,13.758,100.541,ORANGE_W,anchor,1,528.1,818.3,left
-OR10,รางน้ำ,Rang Nam,13.762,100.5475,ORANGE_W,interpolated,1,548.4,797.3,left
-OR11,ดินแดง,Din Daeng,13.766,100.554,ORANGE_W,anchor,1,577.2,797.3,right
-OR12,ศูนย์วัฒนธรรมแห่งประเทศไทย,Thailand Cultural Centre,13.7666,100.5697,ORANGE_W|ORANGE_E,anchor,1,605.7,797.3,left
-OR13,รฟม.,MRTA,13.766,100.579,ORANGE_E,anchor,1,638.5,796.9,left
-OR14,ประดิษฐ์มนูธรรม,Pradit Manutham,13.761667,100.592667,ORANGE_E,interpolated,1,675.1,796.6,right
-OR15,รามคำแหง 12,Ramkhamhaeng 12,13.757333,100.606333,ORANGE_E,interpolated,1,675.4,826.5,left
-OR16,รามคำแหง,Ramkhamhaeng,13.753,100.62,ORANGE_E,anchor,1,675.9,881.2,left
-OR17,ราชมังคลา,Ratchamangkhala,13.7505,100.632,ORANGE_E,interpolated,1,737.2,885.2,right
-OR18,หัวหมาก,Hua Mak,13.748,100.644,ORANGE_E,anchor,1,738.1,858.1,left
-OR19,ลำสาลี,Lam Sali,13.762,100.644,ORANGE_E,anchor,1,799.3,858.0,right
-OR20,ศรีบูรพา,Si Burapha,13.7685,100.655375,ORANGE_E,interpolated,1,836.9,822.4,left
-OR21,คลองบ้านม้า,Khlong Ban Ma,13.775,100.66675,ORANGE_E,interpolated,1,879.5,781.3,right
-OR22,สัมมากร,Sammakon,13.7815,100.678125,ORANGE_E,interpolated,1,921.4,740.6,right
-OR23,น้อมเกล้า,Nom Klao,13.788,100.6895,ORANGE_E,interpolated,1,951.6,711.6,right
-OR24,ราษฎร์พัฒนา,Rat Phatthana,13.7945,100.700875,ORANGE_E,interpolated,1,981.3,682.9,right
-OR25,มีนพัฒนา,Min Phatthana,13.801,100.71225,ORANGE_E,interpolated,1,1010.1,655.2,right
-OR26,เคหะรามคำแหง,Kheha Ramkhamhaeng,13.8075,100.723625,ORANGE_E,interpolated,1,1033.9,632.4,right
-OR27,มีนบุรี,Min Buri,13.814,100.735,ORANGE_E,anchor,1,1056.5,610.8,left
-OR28,สุวินทวงศ์,Suwinthawong,13.821,100.748,ORANGE_E,anchor,1,1097.0,570.4,right
-PP17,รัฐสภา,Rat Sapha,13.797,100.518,PURPLE_S,anchor,1,385.9,692.3,left
-PP18,ศรีย่าน,Si Yan,13.7889,100.5152,PURPLE_S,interpolated,1,386.9,733.8,left
-PP19,วชิรพยาบาล,Vachira Hospital,13.7808,100.5124,PURPLE_S,interpolated,1,388.0,763.6,right
-PP20,หอสมุดแห่งชาติ,National Library,13.7727,100.5096,PURPLE_S,interpolated,1,389.1,793.4,right
-PP21,บางขุนพรหม,Bang Khun Phrom,13.7646,100.5068,PURPLE_S,interpolated,1,390.0,823.3,right
-PP22,ผ่านฟ้า,Phan Fa,13.7565,100.504,PURPLE_S,anchor,1,390.7,854.9,right
-PP23,สามยอด,Sam Yot,13.7452,100.5015,PURPLE_S,anchor,1,369.9,875.9,left
-PP24,สะพานพุทธ,Saphan Phut,13.7395,100.4975,PURPLE_S,anchor,1,370.0,912.2,right
-PP25,วงเวียนใหญ่,Wongwian Yai,13.7207,100.489,PURPLE_S,anchor,1,338.7,943.5,left
-PP26,สำเหร่,Samre,13.712314,100.491857,PURPLE_S,interpolated,1,338.8,975.9,right
-PP27,ดาวคะนอง,Dao Khanong,13.703929,100.494714,PURPLE_S,interpolated,1,338.9,1005.9,right
-PP28,บางปะแก้ว,Bang Pakok,13.695543,100.497571,PURPLE_S,interpolated,1,339.0,1036.0,right
-PP29,บางปะกอก,Bang Pakok 2,13.687157,100.500429,PURPLE_S,interpolated,1,339.0,1066.1,right
-PP30,สุขสวัสดิ์,Suksawat,13.678771,100.503286,PURPLE_S,interpolated,1,339.0,1096.2,right
-PP31,ราษฎร์บูรณะ,Rat Burana,13.670386,100.506143,PURPLE_S,interpolated,1,339.0,1126.3,right
-PP32,ครุใน,Kru Nai,13.662,100.509,PURPLE_S,anchor,1,339.0,1156.3,right
-BR01,แคราย,Khae Rai,13.862,100.517,BROWN,anchor,1,419.9,489.1,right
-BR02,ศูนย์ราชการนนทบุรี,Nonthaburi Civic Center,13.86,100.514,BROWN,anchor,1,377.9,531.9,left
-BR03,งามวงศ์วาน 2,Ngamwongwan 2,13.85694,100.52554,BROWN,interpolated,1,438.2,532.4,right
-BR04,งามวงศ์วาน 18,Ngamwongwan 18,13.85388,100.53708,BROWN,interpolated,1,478.2,532.9,right
-BR05,ชินเขต,Chin Khet,13.85082,100.54862,BROWN,interpolated,1,508.1,533.4,left
-BR06,บางเขน,Bang Khen,13.84776,100.56016,BROWN,interpolated,1,552.8,533.8,right
-BR07,มหาวิทยาลัยเกษตรศาสตร์,Kasetsart University,13.8447,100.5717,BROWN,anchor,1,582.8,534.1,left
-BR08,คลองบางเขน,Khlong Bang Khen,13.838338,100.577262,BROWN,interpolated,1,611.3,562.9,right
-BR09,แยกเกษตร,Yaek Kaset,13.831977,100.582823,BROWN,interpolated,1,632.3,584.2,right
-BR10,ประเสริฐมนูกิจ 2,Prasert Manukit 2,13.825615,100.588385,BROWN,interpolated,1,653.3,605.5,right
-BR11,ประดิษฐ์มนูธรรม,Pradit Manutham,13.819254,100.593946,BROWN,interpolated,1,674.2,626.8,right
-BR12,โรงเรียนสตรีวิทยา 2,Satri Witthaya 2,13.812892,100.599508,BROWN,interpolated,1,695.1,648.0,right
-BR13,ประเสริฐมนูกิจ 25,Prasert Manukit 25,13.806531,100.605069,BROWN,interpolated,1,716.0,669.2,right
-BR14,นวลจันทร์,Nuan Chan,13.800169,100.610631,BROWN,interpolated,1,715.7,705.8,left
-BR15,คลองลำเจียก,Khlong Lam Chiak,13.793808,100.616192,BROWN,interpolated,1,745.4,705.8,right
-BR16,นวมินทร์ 87,Nawamin 87,13.787446,100.621754,BROWN,interpolated,1,745.2,743.1,left
-BR17,สวนนวมินทร์ภิรมย์,Nawamin Phirom Park,13.781085,100.627315,BROWN,interpolated,1,769.7,767.7,left
-BR18,นวมินทร์ 42,Nawamin 42,13.774723,100.632877,BROWN,interpolated,1,804.3,767.7,right
-BR19,แฮปปี้แลนด์,Happy Land,13.768362,100.638438,BROWN,interpolated,1,804.4,808.6,right
-BR20,ลำสาลี,Lam Sali,13.762,100.644,BROWN,anchor,1,804.4,843.8,right
-GR01,วัชรพล,Watcharaphon,13.862,100.648,GREY,anchor,1,869.4,508.5,right
-GR02,รามอินทรา 39,Ram Inthra 39,13.84821,100.64106,GREY,interpolated,1,870.0,568.9,right
-GR03,เกษตร-นวมินทร์,Kaset Nawamin,13.83442,100.63412,GREY,interpolated,1,830.3,609.3,left
-GR04,นวลจันทร์,Nuan Chan,13.82063,100.62718,GREY,interpolated,1,794.7,645.6,left
-GR05,ประดิษฐ์มนูธรรม 25,Pradit Manutham 25,13.80684,100.62024,GREY,interpolated,1,764.9,675.9,left
-GR06,โยธินพัฒนา,Yothin Phatthana,13.79305,100.6133,GREY,interpolated,1,765.2,735.2,right
-GR07,ประชาอุทิศ,Pracha Uthit,13.77926,100.60636,GREY,interpolated,1,730.1,770.7,right
-GR08,ลาดพร้าว 87,Lat Phrao 87,13.76547,100.59942,GREY,interpolated,1,690.7,810.7,right
-GR09,ทองหล่อ 25,Thong Lo 25,13.75168,100.59248,GREY,interpolated,1,648.5,853.4,left
-GR10,เพชรบุรี 38,Phetchaburi 38,13.73789,100.58554,GREY,interpolated,1,606.3,896.0,left
-GR11,ทองหล่อ,Thong Lo,13.7241,100.5786,GREY,anchor,1,606.5,945.1,left
-SV01,บางนา,Bang Na,13.668,100.6046,SILVER,anchor,1,684.7,1116.5,left
-SV02,ประภามนตรี,Prapha Montri,13.670162,100.615569,SILVER,interpolated,1,731.8,1116.1,right
-SV03,บางนา-ตราด 17,Bang Na Trat 17,13.672323,100.626538,SILVER,interpolated,1,770.4,1115.8,right
-SV04,บางนา-ตราด 25,Bang Na Trat 25,13.674485,100.637508,SILVER,interpolated,1,805.3,1115.5,right
-SV05,วัดศรีเอี่ยม,Wat Si Iam,13.676646,100.648477,SILVER,interpolated,1,837.1,1083.5,right
-SV06,เปรมฤทัย,Premruethai,13.678808,100.659446,SILVER,interpolated,1,866.0,1054.2,left
-SV07,บางแก้ว,Bang Kaeo,13.680969,100.670415,SILVER,interpolated,1,895.9,1054.0,left
-SV08,กาญจนาภิเษก,Kanchanaphisek,13.683131,100.681385,SILVER,interpolated,1,925.8,1053.8,left
-SV09,วัดสลุด,Wat Salut,13.685292,100.692354,SILVER,interpolated,1,955.7,1053.6,left
-SV10,กิ่งแก้ว,King Kaeo,13.687454,100.703323,SILVER,interpolated,1,985.9,1053.4,left
-SV11,ธนาซิตี้,Thana City,13.689615,100.714292,SILVER,interpolated,1,1026.0,1013.0,right
-SV12,มหาวิทยาลัยเกษมบัณฑิต,Kasem Bundit University,13.691777,100.725262,SILVER,interpolated,1,983.1,970.4,right
-SV13,อาคารผู้โดยสารสุวรรณภูมิใต้,Suvarnabhumi South Terminal,13.693938,100.736231,SILVER,interpolated,1,940.0,927.9,right
-SV14,สุวรรณภูมิ,Suvarnabhumi,13.6961,100.7472,SILVER,anchor,1,896.6,885.4,left
-LB01,ดินแดง,Din Daeng,13.766,100.554,LIGHTBLUE,anchor,1,532.1,783.8,left
-LB02,ประชาสงเคราะห์,Pracha Songkhro,13.7585,100.558,LIGHTBLUE,interpolated,1,567.4,819.2,left
-LB03,มักกะสัน,Makkasan,13.751,100.562,LIGHTBLUE,anchor,1,609.4,861.5,right
-LB04,ราชปรารภ,Ratchaprarop,13.758,100.541,LIGHTBLUE,anchor,1,571.9,860.2,right
-LB05,ประตูน้ำ,Pratunam,13.7513,100.5405,LIGHTBLUE,anchor,1,511.4,859.4,left
-LB06,ชิดลม,Chit Lom,13.7441,100.5432,LIGHTBLUE,anchor,1,511.0,888.6,left
-LB07,ลุมพินี,Lumphini,13.7256,100.5457,LIGHTBLUE,anchor,1,512.0,948.7,right
-LB08,สาทร,Sathon,13.722,100.534,LIGHTBLUE,anchor,1,474.4,948.8,left
-RN11,คลองหนึ่ง,Khlong Nueng,14.007,100.615,DARKRED_N,interpolated,1,697.8,180.0,right
-RN12,มหาวิทยาลัยกรุงเทพ,Bangkok University,14.028,100.612,DARKRED_N,interpolated,1,697.9,120.0,right
-RN13,เชียงราก,Chiang Rak,14.049,100.609,DARKRED_N,interpolated,1,697.9,60.0,right
-RN14,มหาวิทยาลัยธรรมศาสตร์ ศูนย์รังสิต,Thammasat University Rangsit,14.07,100.606,DARKRED_N,anchor,1,697.9,0.0,right
-RW05,บ้านฉิมพลี,Ban Chimphli,13.78325,100.40775,LIGHTRED_W,interpolated,1,180.9,689.7,left
-RW06,กาญจนาภิเษก,Kanchanaphisek,13.7875,100.3795,LIGHTRED_W,interpolated,1,120.4,690.4,left
-RW07,ศาลาธรรมสพน์,Sala Thammasop,13.79175,100.35125,LIGHTRED_W,interpolated,1,60.1,690.9,left
-RW08,ศาลายา,Salaya,13.796,100.323,LIGHTRED_W,anchor,1,0.0,691.1,left
-RS01,ตลาดน้ำตลิ่งชัน,Taling Chan Floating Market,13.772,100.4525,LIGHTRED_S,interpolated,1,240.1,750.2,left
-RS02,จรัญสนิทวงศ์,Charan Sanitwong,13.765,100.469,LIGHTRED_S,interpolated,1,272.2,785.1,left
-RS03,ศิริราช,Siriraj,13.758,100.4855,LIGHTRED_S,anchor,1,314.1,829.0,right
+station_id,name_th,name_en,lat,lon,lines,coord_source,is_estimated,map_x,map_y,label_side,verified
+N24,คูคต,Khu Khot,13.932094,100.645615,SUKHUMVIT,verified,0,833.0,324.8,right,1
+N23,แยก คปอ.,Yaek Kor Por Aor,13.924983,100.625876,SUKHUMVIT,verified,0,803.0,324.9,left,1
+N22,พิพิธภัณฑ์กองทัพอากาศ,Royal Thai Air Force Museum,13.917945,100.621715,SUKHUMVIT,verified,0,781.9,346.3,left,1
+N21,โรงพยาบาลภูมิพลอดุลยเดช,Bhumibol Adulyadej Hospital,13.910722,100.617423,SUKHUMVIT,verified,0,760.9,367.7,left,1
+N20,สะพานใหม่,Saphan Mai,13.896595,100.609132,SUKHUMVIT,verified,0,740.1,389.3,left,1
+N19,สายหยุด,Sai Yud,13.888442,100.604292,SUKHUMVIT,verified,0,719.3,410.9,left,1
+N18,พหลโยธิน 59,Phahon Yothin 59,13.882454,100.600766,SUKHUMVIT,verified,0,698.5,432.5,right,1
+N17,วัดพระศรีมหาธาตุ,Wat Phra Sri Mahathat,13.8748,100.5946,SUKHUMVIT,anchor,0,675.9,455.7,left,0
+N16,กรมทหารราบที่ 11,11th Infantry Regiment,13.867528,100.59194,SUKHUMVIT,verified,0,675.6,484.9,right,1
+N15,บางบัว,Bang Bua,13.855994,100.585171,SUKHUMVIT,verified,0,653.9,505.1,right,1
+N14,กรมป่าไม้,Royal Forest Department,13.85026,100.581762,SUKHUMVIT,verified,0,632.1,525.4,right,1
+N13,มหาวิทยาลัยเกษตรศาสตร์,Kasetsart University,13.8447,100.5717,SUKHUMVIT,anchor,0,609.6,546.7,left,0
+N12,เสนานิคม,Sena Nikhom,13.836307,100.573743,SUKHUMVIT,verified,0,609.6,576.6,right,1
+N11,รัชโยธิน,Ratchayothin,13.83065,100.5666,SUKHUMVIT,interpolated,0,588.4,597.8,left,0
+N10,พหลโยธิน 24,Phahon Yothin 24,13.82403,100.566459,SUKHUMVIT,verified,0,588.4,635.0,right,1
+N9,ห้าแยกลาดพร้าว,Ha Yaek Lat Phrao,13.8166,100.5615,SUKHUMVIT,anchor,0,538.3,635.0,left,0
+N8,หมอชิต,Mo Chit,13.8026,100.5537,SUKHUMVIT,anchor,0,540.4,690.8,left,0
+N7,สะพานควาย,Saphan Khwai,13.7938,100.5497,SUKHUMVIT,anchor,0,539.7,724.5,left,0
+N5,อารีย์,Ari,13.7797,100.5443,SUKHUMVIT,anchor,0,539.3,754.0,left,0
+N4,สนามเป้า,Sanam Pao,13.7729,100.5417,SUKHUMVIT,anchor,0,538.9,783.4,right,0
+N3,อนุสาวรีย์ชัยสมรภูมิ,Victory Monument,13.7649,100.5375,SUKHUMVIT,anchor,0,509.2,812.5,left,0
+N2,พญาไท,Phaya Thai,13.7566,100.5337,SUKHUMVIT,anchor,0,481.5,839.7,left,0
+N1,ราชเทวี,Ratchathewi,13.7519,100.5316,SUKHUMVIT,anchor,0,480.9,875.3,right,0
+CEN,สยาม,Siam,13.7455,100.534,SUKHUMVIT|SILOM,anchor,0,480.3,905.2,left,0
+E1,ชิดลม,Chit Lom,13.7441,100.5432,SUKHUMVIT,anchor,0,518.7,905.3,right,0
+E2,เพลินจิต,Phloen Chit,13.7432,100.5486,SUKHUMVIT,anchor,0,547.0,875.5,right,0
+E3,นานา,Nana,13.7404,100.5551,SUKHUMVIT,anchor,0,546.4,907.5,left,0
+E4,อโศก,Asok,13.7373,100.5601,SUKHUMVIT,anchor,0,566.7,928.1,left,0
+E5,พร้อมพงษ์,Phrom Phong,13.7304,100.5697,SUKHUMVIT,anchor,0,587.4,949.0,left,0
+E6,ทองหล่อ,Thong Lo,13.7241,100.5786,SUKHUMVIT,anchor,0,611.3,973.0,right,0
+E7,เอกมัย,Ekkamai,13.7195,100.5853,SUKHUMVIT,anchor,0,632.4,993.9,left,0
+E8,พระโขนง,Phra Khanong,13.7154,100.5917,SUKHUMVIT,anchor,0,653.5,1014.8,left,0
+E9,อ่อนนุช,On Nut,13.7057,100.6013,SUKHUMVIT,anchor,0,674.6,1035.8,right,0
+E10,บางจาก,Bang Chak,13.6963,100.6046,SUKHUMVIT,anchor,0,695.6,1056.7,right,0
+E11,ปุณณวิถี,Punnawithi,13.6892,100.6094,SUKHUMVIT,anchor,0,716.7,1077.7,right,0
+E12,อุดมสุข,Udom Suk,13.6797,100.6096,SUKHUMVIT,anchor,0,695.3,1098.6,left,0
+E13,บางนา,Bang Na,13.668,100.6046,SUKHUMVIT,anchor,0,695.2,1128.3,right,0
+E14,แบริ่ง,Bearing,13.6614,100.6017,SUKHUMVIT,anchor,0,672.5,1151.1,left,0
+E15,สำโรง,Samrong,13.646,100.598,SUKHUMVIT,anchor,0,672.6,1211.1,left,0
+E16,ปู่เจ้า,Pu Chao,13.634125,100.598875,SUKHUMVIT,interpolated,0,672.6,1263.6,right,0
+E17,ช้างเอราวัณ,Chang Erawan,13.62145,100.59011,SUKHUMVIT,verified,0,648.7,1287.5,left,1
+E18,โรงเรียนนายเรือ,Royal Thai Naval Academy,13.610375,100.600625,SUKHUMVIT,interpolated,0,690.7,1329.6,right,0
+E19,ปากน้ำ,Pak Nam,13.5985,100.6015,SUKHUMVIT,anchor,0,690.7,1370.3,right,0
+E20,ศรีนครินทร์,Srinagarindra,13.585875,100.603,SUKHUMVIT,interpolated,0,690.7,1411.5,right,0
+E21,แพรกษา,Phraek Sa,13.57325,100.6045,SUKHUMVIT,interpolated,0,690.7,1452.8,right,0
+E22,สายลวด,Sai Luat,13.560625,100.606,SUKHUMVIT,interpolated,0,690.7,1494.0,right,0
+E23,เคหะฯ,Kheha,13.548,100.6075,SUKHUMVIT,anchor,0,690.7,1535.1,right,0
+W1,สนามกีฬาแห่งชาติ,National Stadium,13.7463,100.5296,SILOM,anchor,0,459.1,884.1,left,0
+S1,ราชดำริ,Ratchadamri,13.7397,100.5395,SILOM,anchor,0,501.0,926.1,right,0
+S2,ศาลาแดง,Sala Daeng,13.7286,100.5345,SILOM,anchor,0,479.3,946.8,left,0
+S3,ช่องนนทรี,Chong Nonsi,13.7237,100.529,SILOM,anchor,0,451.3,975.1,left,0
+S4,เซนต์หลุยส์,Saint Louis,13.7215,100.5232,SILOM,anchor,0,430.6,996.2,left,0
+S5,สุรศักดิ์,Surasak,13.7194,100.5163,SILOM,anchor,0,409.9,974.8,right,0
+S6,สะพานตากสิน,Saphan Taksin,13.7189,100.5142,SILOM,anchor,0,389.1,995.8,right,0
+S7,กรุงธนบุรี,Krung Thon Buri,13.7207,100.5015,SILOM,anchor,0,367.4,973.4,right,0
+S8,วงเวียนใหญ่,Wongwian Yai,13.7207,100.489,SILOM,anchor,0,337.8,973.3,right,0
+S9,โพธิ์นิมิตร,Pho Nimit,13.7182,100.4826,SILOM,interpolated,0,308.0,973.3,left,0
+S10,ตลาดพลู,Talat Phlu,13.7157,100.4762,SILOM,anchor,0,279.7,1001.9,left,0
+S11,วุฒากาศ,Wutthakat,13.71815,100.46705,SILOM,interpolated,0,258.6,980.9,right,0
+S12,บางหว้า,Bang Wa,13.7206,100.4579,SILOM,anchor,0,222.8,981.1,left,0
+G1,กรุงธนบุรี,Krung Thon Buri,13.7207,100.5015,GOLD,anchor,0,367.3,987.2,left,0
+G2,เจริญนคร,Charoen Nakhon,13.726478,100.509032,GOLD,verified,0,393.7,960.7,right,1
+G3,คลองสาน,Khlong San,13.73,100.51,GOLD,anchor,0,393.7,930.7,left,0
+BL01,ท่าพระ,Tha Phra,13.7294,100.4742,BLUE,anchor,0,306.7,946.5,right,0
+BL02,จรัญฯ 13,Charan 13,13.73961,100.47077,BLUE,verified,0,286.4,925.3,left,1
+BL03,ไฟฉาย,Fai Chai,13.755333,100.473867,BLUE,interpolated,0,287.2,865.3,right,0
+BL04,บางขุนนนท์,Bang Khun Non,13.7683,100.4737,BLUE,anchor,0,287.7,806.6,left,0
+BL05,บางยี่ขัน,Bang Yi Khan,13.7733,100.48085,BLUE,interpolated,0,308.6,786.7,right,0
+BL06,สิรินธร,Sirindhorn,13.7783,100.488,BLUE,anchor,0,329.2,767.2,right,0
+BL07,บางพลัด,Bang Phlat,13.787533,100.499,BLUE,interpolated,0,349.7,747.5,left,0
+BL08,บางอ้อ,Bang O,13.796767,100.51,BLUE,interpolated,0,370.6,727.5,left,0
+BL09,บางโพ,Bang Pho,13.806,100.521,BLUE,anchor,0,397.8,701.3,right,0
+BL10,เตาปูน,Tao Poon,13.806,100.529,BLUE,anchor,0,420.0,680.4,right,0
+BL11,บางซื่อ,Bang Sue,13.8028,100.538,BLUE,anchor,0,442.8,706.7,left,0
+BL12,กำแพงเพชร,Kamphaeng Phet,13.8025,100.546,BLUE,interpolated,0,502.9,705.8,right,0
+BL13,สวนจตุจักร,Chatuchak Park,13.8022,100.554,BLUE,anchor,0,543.6,705.0,right,0
+BL14,พหลโยธิน,Phahon Yothin,13.8135,100.5601,BLUE,anchor,0,546.9,669.9,left,0
+BL15,ลาดพร้าว,Lat Phrao,13.8163,100.5619,BLUE,anchor,0,550.4,635.1,left,0
+BL16,รัชดาภิเษก,Ratchadaphisek,13.803467,100.566067,BLUE,interpolated,0,593.1,675.5,right,0
+BL17,สุทธิสาร,Sutthisan,13.790633,100.570233,BLUE,interpolated,0,595.0,734.8,left,0
+BL18,ห้วยขวาง,Huai Khwang,13.7778,100.5744,BLUE,anchor,0,597.1,785.8,right,0
+BL19,ศูนย์วัฒนธรรมแห่งประเทศไทย,Thailand Cultural Centre,13.7666,100.5697,BLUE,anchor,0,599.2,828.7,right,0
+BL20,พระราม 9,Phra Ram 9,13.758,100.5654,BLUE,anchor,0,572.7,855.7,left,0
+BL21,เพชรบุรี,Phetchaburi,13.7486,100.5657,BLUE,anchor,0,612.1,894.9,right,0
+BL22,สุขุมวิท,Sukhumvit,13.7385,100.5615,BLUE,anchor,0,580.3,927.7,left,0
+BL23,ศูนย์การประชุมแห่งชาติสิริกิติ์,Queen Sirikit National Convention Centre,13.7231,100.5601,BLUE,anchor,0,580.3,981.7,right,0
+BL24,คลองเตย,Khlong Toei,13.7226,100.5533,BLUE,anchor,0,543.2,981.6,left,0
+BL25,ลุมพินี,Lumphini,13.7256,100.5457,BLUE,anchor,0,517.8,956.2,right,0
+BL26,สีลม,Si Lom,13.7292,100.5364,BLUE,anchor,0,488.6,956.2,right,0
+BL27,สามย่าน,Sam Yan,13.7325,100.5296,BLUE,anchor,0,457.9,925.5,left,0
+BL28,หัวลำโพง,Hua Lamphong,13.7377,100.517,BLUE,anchor,0,427.9,925.4,left,0
+BL29,วัดมังกร,Wat Mangkon,13.743,100.51,BLUE,anchor,0,406.8,904.2,right,0
+BL30,สามยอด,Sam Yot,13.7452,100.5015,BLUE,anchor,0,377.0,904.2,right,0
+BL31,สนามไชย,Sanam Chai,13.744,100.494,BLUE,anchor,0,347.6,904.2,left,0
+BL32,อิสรภาพ,Itsaraphap,13.74,100.4855,BLUE,anchor,0,327.1,925.3,left,0
+BL34,บางไผ่,Bang Phai,13.7303,100.4717,BLUE,interpolated,0,271.7,946.4,left,0
+BL35,บางหว้า,Bang Wa,13.7206,100.4579,BLUE,anchor,0,236.8,981.2,right,0
+BL36,เพชรเกษม 48,Phetkasem 48,13.717067,100.4416,BLUE,interpolated,0,181.1,981.3,left,0
+BL37,ภาษีเจริญ,Phasi Charoen,13.713533,100.4253,BLUE,interpolated,0,129.0,981.4,left,0
+BL38,บางแค,Bang Khae,13.71,100.409,BLUE,anchor,0,83.4,981.4,left,0
+BL39,หลักสอง,Lak Song,13.706,100.4045,BLUE,anchor,0,52.1,1012.7,left,0
+PP01,คลองบางไผ่,Khlong Bang Phai,13.8783,100.403,PURPLE,anchor,0,56.5,453.4,left,0
+PP02,ตลาดบางใหญ่,Talad Bang Yai,13.880978,100.409218,PURPLE,verified,0,86.5,453.4,left,1
+PP03,สามแยกบางใหญ่,Sam Yaek Bang Yai,13.871071,100.427286,PURPLE,interpolated,0,129.0,495.8,left,0
+PP04,บางพลู,Bang Phlu,13.867457,100.439429,PURPLE,interpolated,0,174.2,495.8,right,0
+PP05,บางรักใหญ่,Bang Rak Yai,13.863843,100.451571,PURPLE,interpolated,0,216.6,495.8,right,0
+PP06,บางรักน้อย-ท่าอิฐ,Bang Rak Noi Tha It,13.87467,100.45621,PURPLE,verified,0,238.9,473.5,left,1
+PP07,ไทรม้า,Sai Ma,13.856614,100.475857,PURPLE,interpolated,0,281.2,516.0,right,0
+PP08,สะพานพระนั่งเกล้า,Phra Nang Klao Bridge,13.853,100.488,PURPLE,anchor,0,313.4,548.6,right,0
+PP09,แยกนนทบุรี 1,Yaek Nonthaburi 1,13.855333,100.496667,PURPLE,interpolated,0,343.2,548.9,left,0
+PP10,บางกระสอ,Bang Krasor,13.857667,100.505333,PURPLE,interpolated,0,373.0,549.2,left,0
+PP11,ศูนย์ราชการนนทบุรี,Nonthaburi Civic Center,13.86,100.514,PURPLE,anchor,0,413.3,549.5,right,0
+PP12,กระทรวงสาธารณสุข,Ministry of Public Health,13.85125,100.51675,PURPLE,interpolated,0,412.9,579.9,right,0
+PP13,แยกติวานนท์,Yaek Tiwanon,13.8425,100.5195,PURPLE,interpolated,0,412.4,609.9,right,0
+PP14,วงศ์สว่าง,Wong Sawang,13.83375,100.52225,PURPLE,interpolated,0,411.8,647.2,right,0
+PP15,บางซ่อน,Bang Son,13.825,100.525,PURPLE,anchor,0,368.8,689.7,left,0
+PP16,เตาปูน,Tao Poon,13.806,100.529,PURPLE|PURPLE_S,anchor,0,412.2,689.7,right,0
+YL01,ลาดพร้าว,Lat Phrao,13.8163,100.5619,YELLOW,anchor,0,560.8,646.4,left,0
+YL02,ภาวนา,Phawana,13.80012,100.58424,YELLOW,verified,0,603.7,690.0,right,1
+YL03,โชคชัย 4,Chok Chai 4,13.794725,100.594268,YELLOW,verified,0,645.8,732.7,left,1
+YL04,ลาดพร้าว 71,Lat Phrao 71,13.78731,100.60712,YELLOW,verified,0,688.2,775.3,left,1
+YL05,ลาดพร้าว 83,Lat Phrao 83,13.78366,100.61371,YELLOW,verified,0,730.7,775.5,right,1
+YL06,มหาดไทย,Mahat Thai,13.77806,100.62369,YELLOW,verified,0,731.0,806.6,left,1
+YL07,ลาดพร้าว 101,Lat Phrao 101,13.77436,100.63036,YELLOW,verified,0,761.2,836.5,left,1
+YL08,บางกะปิ,Bang Kapi,13.766,100.644,YELLOW,anchor,0,804.5,836.2,right,0
+YL09,แยกลำสาลี,Yaek Lam Sali,13.761357,100.645494,YELLOW,verified,0,803.7,881.8,right,1
+YL10,ศรีกรีฑา,Si Kritha,13.75075,100.6449,YELLOW,verified,0,752.8,883.5,left,1
+YL11,หัวหมาก,Hua Mak,13.748,100.644,YELLOW,anchor,0,713.4,886.0,left,0
+YL12,กลันตัน,Kalantan,13.72562,100.64175,YELLOW,verified,0,774.5,887.1,right,1
+YL13,ศรีนุช,Si Nut,13.711076,100.644163,YELLOW,verified,0,775.5,948.6,right,1
+YL14,ศรีนครินทร์ 38,Srinagarindra 38,13.70061,100.64658,YELLOW,verified,0,776.3,1009.8,right,1
+YL15,สวนหลวง ร.9,Suan Luang Rama IX,13.69079,100.64709,YELLOW,verified,0,776.8,1070.5,right,1
+YL16,ศรีอุดม,Si Udom,13.676508,100.646114,YELLOW,verified,0,777.1,1129.2,left,1
+YL17,ศรีเอี่ยม,Si Iam,13.667646,100.645126,YELLOW,verified,0,807.0,1158.9,right,1
+YL18,ศรีลาซาล,Si La Salle,13.65599,100.64231,YELLOW,verified,0,807.0,1198.8,right,1
+YL19,ศรีแบริ่ง,Si Bearing,13.643549,100.636271,YELLOW,verified,0,785.8,1220.0,right,1
+YL20,ศรีด่าน,Si Dan,13.633208,100.630065,YELLOW,verified,0,763.1,1242.8,left,1
+YL21,ศรีเทพา,Si Thepha,13.629949,100.622649,YELLOW,verified,0,740.8,1265.2,right,1
+YL22,ทิพวัล,Thipphawan,13.636678,100.610075,YELLOW,verified,0,717.8,1242.2,right,1
+YL23,สำโรง,Samrong,13.646,100.598,YELLOW,anchor,0,686.6,1211.0,left,0
+PK01,ศูนย์ราชการนนทบุรี,Nonthaburi Civic Center,13.860148,100.513241,PINK,verified,0,403.1,559.4,left,1
+PK02,แคราย,Khae Rai,13.862733,100.520612,PINK,verified,0,431.1,529.7,right,1
+PK03,สนามบินน้ำ,Sanambin Nam,13.874183,100.516322,PINK,verified,0,392.4,491.1,left,1
+PK04,สามัคคี,Samakkhi,13.889197,100.510649,PINK,verified,0,392.4,440.2,left,1
+PK05,กรมชลประทาน,Royal Irrigation Department,13.898298,100.507225,PINK,verified,0,392.4,410.2,left,1
+PK06,แยกปากเกร็ด,Yaek Pak Kret,13.906313,100.505401,PINK,verified,0,392.4,380.2,left,1
+PK07,เลี่ยงเมืองปากเกร็ด,Pak Kret Bypass,13.90642,100.51582,PINK,verified,0,422.4,380.2,left,1
+PK08,แจ้งวัฒนะ-ปากเกร็ด 28,Chaeng Watthana Pak Kret 28,13.9041,100.52918,PINK,verified,0,456.0,380.3,right,1
+PK09,ศรีรัช,Si Rat,13.900575,100.53989,PINK,verified,0,486.0,380.3,left,1
+PK10,เมืองทองธานี,Muang Thong Thani,13.897484,100.548324,PINK|PINK_MT,verified,0,516.0,380.3,left,1
+PK11,แจ้งวัฒนะ 14,Chaeng Watthana 14,13.89316,100.56037,PINK,verified,0,554.8,380.3,right,1
+PK12,ศูนย์ราชการเฉลิมพระเกียรติ,Government Complex,13.890715,100.567304,PINK,verified,0,576.2,401.7,left,1
+PK13,โทรคมนาคมแห่งชาติ,National Telecom,13.88743,100.57579,PINK,verified,0,623.8,401.7,right,1
+PK14,หลักสี่,Lak Si,13.884108,100.582584,PINK,verified,0,623.9,445.5,left,1
+PK15,ราชภัฏพระนคร,Rajabhat Phranakhon,13.8798,100.58952,PINK,verified,0,661.4,443.9,right,1
+PK16,วัดพระศรีมหาธาตุ,Wat Phra Sri Mahathat,13.87448,100.59724,PINK,verified,0,685.5,466.1,right,1
+PK17,รามอินทรา 3,Ram Inthra 3,13.87082,100.60286,PINK,verified,0,707.4,487.4,left,1
+PK18,ลาดปลาเค้า,Lat Pla Khao,13.862703,100.61794,PINK,verified,0,732.1,511.7,right,1
+PK19,รามอินทรา กม.4,Ram Inthra Kor Mor 4,13.85825,100.62618,PINK,verified,0,755.7,535.0,left,1
+PK20,มัยลาภ,Maiyalap,13.85504,100.63222,PINK,verified,0,796.3,535.0,right,1
+PK21,วัชรพล,Vacharaphol,13.849197,100.64283,PINK,verified,0,831.4,570.1,right,1
+PK22,รามอินทรา กม.6,Ram Inthra Kor Mor 6,13.8452,100.65033,PINK,verified,0,852.6,591.5,right,1
+PK23,คู้บอน,Khu Bon,13.84048,100.65907,PINK,verified,0,873.7,612.8,right,1
+PK24,รามอินทรา กม.9,Ram Inthra Kor Mor 9,13.833832,100.667485,PINK,verified,0,894.8,634.1,left,1
+PK25,วงแหวนรามอินทรา,Wong Waen Ram Inthra,13.82464,100.67704,PINK,verified,0,921.1,660.7,right,1
+PK26,นพรัตน์,Nopparat,13.816575,100.685552,PINK,verified,0,942.3,639.7,left,1
+PK27,บางชัน,Bang Chan,13.81271,100.70341,PINK,verified,0,987.3,639.8,right,1
+PK28,เศรษฐบุตรบำเพ็ญ,Setthabutbamphen,13.812704,100.713211,PINK,verified,0,1017.3,640.0,left,1
+PK29,ตลาดมีนบุรี,Min Buri Market,13.81255,100.72565,PINK,verified,0,1057.2,640.1,right,1
+PK30,มีนบุรี,Min Buri,13.80847,100.73266,PINK,verified,0,1080.2,663.2,right,1
+MT01,อิมแพ็ค เมืองทองธานี,Impact Muang Thong Thani,13.9109,100.54433,PINK_MT,verified,0,516.0,350.3,left,1
+MT02,ทะเลสาบเมืองทองธานี,Muang Thong Thani Lake,13.91768,100.54536,PINK_MT,verified,0,516.0,320.3,left,1
+RN01,กลางกรุงเทพอภิวัฒน์,Krung Thep Aphiwat Central Terminal,13.8028,100.538,DARKRED,anchor,0,442.4,691.5,right,0
+RN02,จตุจักร,Chatuchak,13.818,100.548,DARKRED,anchor,0,443.1,630.8,left,0
+RN03,วัดเสมียนนารี,Wat Samian Nari,13.841655,100.557528,DARKRED,verified,0,486.2,587.7,right,1
+RN04,บางเขน,Bang Khen,13.8515,100.562,DARKRED,interpolated,0,529.1,544.3,right,0
+RN05,ทุ่งสองห้อง,Thung Song Hong,13.86825,100.569,DARKRED,interpolated,0,571.7,500.8,right,0
+RN06,หลักสี่,Lak Si,13.885,100.576,DARKRED,anchor,0,614.1,457.1,left,0
+RN07,การเคหะ,Kan Kheha,13.899,100.588,DARKRED,interpolated,0,654.9,416.7,right,0
+RN08,ดอนเมือง,Don Mueang,13.913,100.6,DARKRED,anchor,0,655.1,360.0,right,0
+RN09,หลักหก,Lak Hok,13.965808,100.605325,DARKRED,verified,0,655.2,300.0,right,1
+RN10,รังสิต,Rangsit,13.986,100.618,DARKRED|DARKRED_N,anchor,0,655.3,240.0,right,0
+RW01,กลางกรุงเทพอภิวัฒน์,Krung Thep Aphiwat Central Terminal,13.8028,100.538,LIGHTRED,anchor,0,431.3,700.8,right,0
+RW02,บางซ่อน,Bang Son,13.825,100.525,LIGHTRED,anchor,0,368.2,704.1,left,0
+RW03,บางบำหรุ,Bang Bamru,13.791703,100.477658,LIGHTRED,verified,0,304.7,707.8,left,1
+RW04,ตลิ่งชัน,Taling Chan,13.779,100.436,LIGHTRED|LIGHTRED_W|LIGHTRED_S,anchor,0,241.3,711.4,left,0
+A8,พญาไท,Phaya Thai,13.7566,100.5337,ARL,anchor,0,492.0,849.6,left,0
+A7,ราชปรารภ,Ratchaprarop,13.758,100.541,ARL,anchor,0,535.4,892.3,left,0
+A6,มักกะสัน,Makkasan,13.751,100.562,ARL,anchor,0,597.0,893.1,left,0
+A5,รามคำแหง,Ramkhamhaeng,13.753,100.62,ARL,anchor,0,659.5,896.8,right,0
+A4,หัวหมาก,Hua Mak,13.748,100.644,ARL,anchor,0,703.2,897.2,left,0
+A3,บ้านทับช้าง,Ban Thap Chang,13.742,100.679,ARL,anchor,0,761.6,898.4,left,0
+A2,ลาดกระบัง,Lat Krabang,13.728,100.75,ARL,anchor,0,821.6,898.2,left,0
+A1,สุวรรณภูมิ,Suvarnabhumi,13.6961,100.7472,ARL,anchor,0,881.8,897.5,right,0
+OR01,บางขุนนนท์,Bang Khun Non,13.7683,100.4737,ORANGE_W,anchor,1,276.9,797.7,left,0
+OR02,ศิริราช,Siriraj,13.758,100.4855,ORANGE_W,anchor,1,318.2,841.5,right,0
+OR03,สนามหลวง,Sanam Luang,13.7565,100.493,ORANGE_W,anchor,1,339.5,864.0,left,0
+OR04,อนุสาวรีย์ประชาธิปไตย,Democracy Monument,13.7565,100.5015,ORANGE_W,anchor,1,369.1,864.4,left,0
+OR05,หลานหลวง,Lan Luang,13.75625,100.51,ORANGE_W,interpolated,1,410.8,864.8,right,0
+OR06,ยมราช,Yommarat,13.756,100.5185,ORANGE_W,anchor,1,440.8,865.2,left,0
+OR07,ราชเทวี,Ratchathewi,13.7519,100.5316,ORANGE_W,anchor,1,470.9,865.4,left,0
+OR08,ประตูน้ำ,Pratunam,13.7513,100.5405,ORANGE_W,anchor,1,523.7,865.6,right,0
+OR09,ราชปรารภ,Ratchaprarop,13.758,100.541,ORANGE_W,anchor,1,523.2,835.8,left,0
+OR10,รางน้ำ,Rang Nam,13.762,100.5475,ORANGE_W,interpolated,1,543.6,814.7,left,0
+OR11,ดินแดง,Din Daeng,13.766,100.554,ORANGE_W,anchor,1,572.4,814.6,right,0
+OR12,ศูนย์วัฒนธรรมแห่งประเทศไทย,Thailand Cultural Centre,13.7666,100.5697,ORANGE_W|ORANGE_E,anchor,1,600.9,814.3,left,0
+OR13,รฟม.,MRTA,13.766,100.579,ORANGE_E,anchor,1,633.6,813.6,left,0
+OR14,ประดิษฐ์มนูธรรม,Pradit Manutham,13.761667,100.592667,ORANGE_E,interpolated,1,673.5,812.9,right,0
+OR15,รามคำแหง 12,Ramkhamhaeng 12,13.757333,100.606333,ORANGE_E,interpolated,1,674.6,845.3,left,0
+OR16,รามคำแหง,Ramkhamhaeng,13.753,100.62,ORANGE_E,anchor,1,676.5,900.3,left,0
+OR17,ราชมังคลา,Ratchamangkhala,13.7505,100.632,ORANGE_E,interpolated,1,742.0,903.9,right,0
+OR18,หัวหมาก,Hua Mak,13.748,100.644,ORANGE_E,anchor,1,726.8,886.1,left,0
+OR19,ลำสาลี,Lam Sali,13.762,100.644,ORANGE_E,anchor,1,791.9,889.5,right,0
+OR20,ศรีบูรพา,Si Burapha,13.7685,100.655375,ORANGE_E,interpolated,1,833.6,849.7,left,0
+OR21,คลองบ้านม้า,Khlong Ban Ma,13.775,100.66675,ORANGE_E,interpolated,1,876.3,808.3,left,0
+OR22,สัมมากร,Sammakon,13.7815,100.678125,ORANGE_E,interpolated,1,919.0,766.2,right,0
+OR23,น้อมเกล้า,Nom Klao,13.788,100.6895,ORANGE_E,interpolated,1,950.4,735.3,right,0
+OR24,ราษฎร์พัฒนา,Rat Phatthana,13.7945,100.700875,ORANGE_E,interpolated,1,980.1,705.9,right,0
+OR25,มีนพัฒนา,Min Phatthana,13.801,100.71225,ORANGE_E,interpolated,1,1009.5,676.8,right,0
+OR26,เคหะรามคำแหง,Kheha Ramkhamhaeng,13.8075,100.723625,ORANGE_E,interpolated,1,1037.2,649.2,left,0
+OR27,มีนบุรี,Min Buri,13.814,100.735,ORANGE_E,anchor,1,1080.2,649.2,right,0
+OR28,สุวินทวงศ์,Suwinthawong,13.821,100.748,ORANGE_E,anchor,1,1116.7,612.7,right,0
+PP17,รัฐสภา,Rat Sapha,13.797,100.518,PURPLE_S,anchor,1,386.3,716.5,left,0
+PP18,ศรีย่าน,Si Yan,13.7889,100.5152,PURPLE_S,interpolated,1,386.8,746.6,left,0
+PP19,วชิรพยาบาล,Vachira Hospital,13.7808,100.5124,PURPLE_S,interpolated,1,387.2,776.5,right,0
+PP20,หอสมุดแห่งชาติ,National Library,13.7727,100.5096,PURPLE_S,interpolated,1,387.7,806.5,right,0
+PP21,บางขุนพรหม,Bang Khun Phrom,13.7646,100.5068,PURPLE_S,interpolated,1,388.1,836.4,right,0
+PP22,ผ่านฟ้า,Phan Fa,13.7565,100.504,PURPLE_S,anchor,1,388.4,872.8,right,0
+PP23,สามยอด,Sam Yot,13.7452,100.5015,PURPLE_S,anchor,1,366.9,894.3,left,0
+PP24,สะพานพุทธ,Saphan Phut,13.7395,100.4975,PURPLE_S,anchor,1,366.8,930.4,right,0
+PP25,วงเวียนใหญ่,Wongwian Yai,13.7207,100.489,PURPLE_S,anchor,1,337.9,959.2,left,0
+PP26,สำเหร่,Samre,13.712314,100.491857,PURPLE_S,interpolated,1,337.9,994.8,right,0
+PP27,ดาวคะนอง,Dao Khanong,13.703929,100.494714,PURPLE_S,interpolated,1,337.9,1024.7,right,0
+PP28,บางปะแก้ว,Bang Pakok,13.695543,100.497571,PURPLE_S,interpolated,1,337.9,1054.5,right,0
+PP29,บางปะกอก,Bang Pakok 2,13.687157,100.500429,PURPLE_S,interpolated,1,337.9,1084.4,right,0
+PP30,สุขสวัสดิ์,Suksawat,13.678771,100.503286,PURPLE_S,interpolated,1,337.9,1114.3,left,0
+PP31,ราษฎร์บูรณะ,Rat Burana,13.670386,100.506143,PURPLE_S,interpolated,1,337.9,1144.3,left,0
+PP32,ครุใน,Kru Nai,13.662,100.509,PURPLE_S,anchor,1,337.9,1174.3,left,0
+BR01,แคราย,Khae Rai,13.862,100.517,BROWN,anchor,1,420.2,518.8,right,0
+BR02,ศูนย์ราชการนนทบุรี,Nonthaburi Civic Center,13.86,100.514,BROWN,anchor,1,393.9,543.6,left,0
+BR03,งามวงศ์วาน 2,Ngamwongwan 2,13.85694,100.52554,BROWN,interpolated,1,448.4,543.8,right,0
+BR04,งามวงศ์วาน 18,Ngamwongwan 18,13.85388,100.53708,BROWN,interpolated,1,478.3,544.3,right,0
+BR05,ชินเขต,Chin Khet,13.85082,100.54862,BROWN,interpolated,1,508.1,544.9,left,0
+BR06,บางเขน,Bang Khen,13.84776,100.56016,BROWN,interpolated,1,557.9,545.6,right,0
+BR07,มหาวิทยาลัยเกษตรศาสตร์,Kasetsart University,13.8447,100.5717,BROWN,anchor,1,595.5,546.3,left,0
+BR08,คลองบางเขน,Khlong Bang Khen,13.838338,100.577262,BROWN,interpolated,1,630.7,546.5,right,0
+BR09,แยกเกษตร,Yaek Kaset,13.831977,100.582823,BROWN,interpolated,1,630.5,606.0,left,0
+BR10,ประเสริฐมนูกิจ 2,Prasert Manukit 2,13.825615,100.588385,BROWN,interpolated,1,651.4,627.2,left,0
+BR11,ประดิษฐ์มนูธรรม,Pradit Manutham,13.819254,100.593946,BROWN,interpolated,1,672.3,648.4,left,0
+BR12,โรงเรียนสตรีวิทยา 2,Satri Witthaya 2,13.812892,100.599508,BROWN,interpolated,1,693.3,669.6,left,0
+BR13,ประเสริฐมนูกิจ 25,Prasert Manukit 25,13.806531,100.605069,BROWN,interpolated,1,714.4,690.8,right,0
+BR14,นวลจันทร์,Nuan Chan,13.800169,100.610631,BROWN,interpolated,1,714.3,723.1,left,0
+BR15,คลองลำเจียก,Khlong Lam Chiak,13.793808,100.616192,BROWN,interpolated,1,765.7,723.0,right,0
+BR16,นวมินทร์ 87,Nawamin 87,13.787446,100.621754,BROWN,interpolated,1,765.7,752.9,right,0
+BR17,สวนนวมินทร์ภิรมย์,Nawamin Phirom Park,13.781085,100.627315,BROWN,interpolated,1,765.7,783.9,left,0
+BR18,นวมินทร์ 42,Nawamin 42,13.774723,100.632877,BROWN,interpolated,1,792.2,810.5,right,0
+BR19,แฮปปี้แลนด์,Happy Land,13.768362,100.638438,BROWN,interpolated,1,792.2,851.9,left,0
+BR20,ลำสาลี,Lam Sali,13.762,100.644,BROWN,anchor,1,813.6,872.6,right,0
+GR01,วัชรพล,Watcharaphon,13.8495,100.6425,GREY,snapped,1,821.6,560.2,left,0
+GR02,รามอินทรา 39,Ram Inthra 39,13.84821,100.64106,GREY,interpolated,1,821.7,591.8,left,0
+GR03,เกษตร-นวมินทร์,Kaset Nawamin,13.83442,100.63412,GREY,interpolated,1,821.7,651.7,left,0
+GR04,นวลจันทร์,Nuan Chan,13.82063,100.62718,GREY,interpolated,1,821.8,688.6,right,0
+GR05,ประดิษฐ์มนูธรรม 25,Pradit Manutham 25,13.80684,100.62024,GREY,interpolated,1,787.5,723.2,right,0
+GR06,โยธินพัฒนา,Yothin Phatthana,13.79305,100.6133,GREY,interpolated,1,747.6,763.5,left,0
+GR07,ประชาอุทิศ,Pracha Uthit,13.77926,100.60636,GREY,interpolated,1,711.2,800.8,left,0
+GR08,ลาดพร้าว 87,Lat Phrao 87,13.76547,100.59942,GREY,interpolated,1,685.7,827.5,right,0
+GR09,ทองหล่อ 25,Thong Lo 25,13.75168,100.59248,GREY,interpolated,1,643.5,870.5,right,0
+GR10,เพชรบุรี 38,Phetchaburi 38,13.73789,100.58554,GREY,interpolated,1,601.3,913.3,left,0
+GR11,ทองหล่อ,Thong Lo,13.7241,100.5786,GREY,anchor,1,601.4,963.5,left,0
+SV01,บางนา,Bang Na,13.668,100.6046,SILVER,anchor,1,685.2,1117.8,left,0
+SV02,ประภามนตรี,Prapha Montri,13.670162,100.615569,SILVER,interpolated,1,727.6,1117.0,right,0
+SV03,บางนา-ตราด 17,Bang Na Trat 17,13.672323,100.626538,SILVER,interpolated,1,758.4,1116.1,left,0
+SV04,บางนา-ตราด 25,Bang Na Trat 25,13.674485,100.637508,SILVER,interpolated,1,794.1,1115.2,right,0
+SV05,วัดศรีเอี่ยม,Wat Si Iam,13.676646,100.648477,SILVER,interpolated,1,824.1,1114.3,left,0
+SV06,เปรมฤทัย,Premruethai,13.678808,100.659446,SILVER,interpolated,1,866.5,1071.1,right,0
+SV07,บางแก้ว,Bang Kaeo,13.680969,100.670415,SILVER,interpolated,1,896.4,1070.5,left,0
+SV08,กาญจนาภิเษก,Kanchanaphisek,13.683131,100.681385,SILVER,interpolated,1,932.9,1070.2,right,0
+SV09,วัดสลุด,Wat Salut,13.685292,100.692354,SILVER,interpolated,1,956.7,1093.7,right,0
+SV10,กิ่งแก้ว,King Kaeo,13.687454,100.703323,SILVER,interpolated,1,979.8,1070.6,left,0
+SV11,ธนาซิตี้,Thana City,13.689615,100.714292,SILVER,interpolated,1,1018.7,1031.7,right,0
+SV12,มหาวิทยาลัยเกษมบัณฑิต,Kasem Bundit University,13.691777,100.725262,SILVER,interpolated,1,976.2,989.4,right,0
+SV13,อาคารผู้โดยสารสุวรรณภูมิใต้,Suvarnabhumi South Terminal,13.693938,100.736231,SILVER,interpolated,1,933.4,947.3,left,0
+SV14,สุวรรณภูมิ,Suvarnabhumi,13.6961,100.7472,SILVER,anchor,1,892.1,906.8,left,0
+LB01,ดินแดง,Din Daeng,13.766,100.554,LIGHTBLUE,anchor,1,527.5,801.0,left,0
+LB02,ประชาสงเคราะห์,Pracha Songkhro,13.7585,100.558,LIGHTBLUE,interpolated,1,563.0,836.6,left,0
+LB03,มักกะสัน,Makkasan,13.751,100.562,LIGHTBLUE,anchor,1,605.7,879.4,right,0
+LB04,ราชปรารภ,Ratchaprarop,13.758,100.541,LIGHTBLUE,anchor,1,566.9,877.9,right,0
+LB05,ประตูน้ำ,Pratunam,13.7513,100.5405,LIGHTBLUE,anchor,1,506.4,876.9,left,0
+LB06,ชิดลม,Chit Lom,13.7441,100.5432,LIGHTBLUE,anchor,1,506.1,906.0,left,0
+LB07,ลุมพินี,Lumphini,13.7256,100.5457,LIGHTBLUE,anchor,1,507.1,966.1,right,0
+LB08,สาทร,Sathon,13.722,100.534,LIGHTBLUE,anchor,1,470.1,966.2,left,0
+RN11,คลองหนึ่ง,Khlong Nueng,14.007,100.615,DARKRED_N,interpolated,1,655.4,180.0,right,0
+RN12,มหาวิทยาลัยกรุงเทพ,Bangkok University,14.028,100.612,DARKRED_N,interpolated,1,655.5,120.0,right,0
+RN13,เชียงราก,Chiang Rak,14.049,100.609,DARKRED_N,interpolated,1,655.5,60.0,right,0
+RN14,มหาวิทยาลัยธรรมศาสตร์ ศูนย์รังสิต,Thammasat University Rangsit,14.07,100.606,DARKRED_N,anchor,1,655.5,0.0,right,0
+RW05,บ้านฉิมพลี,Ban Chimphli,13.78325,100.40775,LIGHTRED_W,interpolated,1,180.7,712.2,left,0
+RW06,กาญจนาภิเษก,Kanchanaphisek,13.7875,100.3795,LIGHTRED_W,interpolated,1,120.3,712.8,left,0
+RW07,ศาลาธรรมสพน์,Sala Thammasop,13.79175,100.35125,LIGHTRED_W,interpolated,1,60.1,713.1,left,0
+RW08,ศาลายา,Salaya,13.796,100.323,LIGHTRED_W,anchor,1,0.0,713.3,left,0
+RS01,ตลาดน้ำตลิ่งชัน,Taling Chan Floating Market,13.772,100.4525,LIGHTRED_S,interpolated,1,238.9,773.8,left,0
+RS02,จรัญสนิทวงศ์,Charan Sanitwong,13.765,100.469,LIGHTRED_S,interpolated,1,279.8,818.1,right,0
+RS03,ศิริราช,Siriraj,13.758,100.4855,LIGHTRED_S,anchor,1,317.7,856.2,right,0

@@ -9,4 +9,3 @@ venv/
 .vscode/
 datasets/
 *.ipynb
-datasets/
