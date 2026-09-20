@@ -72,6 +72,12 @@ class Weights:
     cost: float = 0.0
     transit: float = 0.0
 
+    def __post_init__(self) -> None:
+        if min(self.time, self.cost, self.transit) < 0.0:
+            raise ValueError("weights must be non-negative")
+        if max(self.time, self.cost, self.transit) == 0.0:
+            raise ValueError("at least one weight must be positive")
+
 
 @dataclass(frozen=True)
 class Route:
@@ -263,6 +269,40 @@ def _reconstruct(came_from: dict[Node, Node], node: Node) -> list[Node]:
     return path
 
 
+class _Meter:
+    def __init__(self, trace_memory: bool = True) -> None:
+        self.trace_memory = trace_memory
+        self.expanded = 0
+        self.generated = 0
+        self.runtime_sec = 0.0
+        self.peak_memory_bytes = 0
+        self._started = 0.0
+
+    def __enter__(self) -> _Meter:
+        if self.trace_memory:
+            tracemalloc.start()
+        self._started = time.perf_counter()
+        return self
+
+    def __exit__(self, *exc_info: object) -> None:
+        self.runtime_sec = time.perf_counter() - self._started
+        if self.trace_memory:
+            self.peak_memory_bytes = tracemalloc.get_traced_memory()[1]
+            tracemalloc.stop()
+
+
+def _route(graph: MetroGraph, path: list[Node], duration_sec: float, meter: _Meter) -> Route:
+    return Route(
+        path=path,
+        duration_sec=duration_sec,
+        fare_thb=graph.fare_for(path),
+        nodes_expanded=meter.expanded,
+        nodes_generated=meter.generated,
+        runtime_sec=meter.runtime_sec,
+        peak_memory_bytes=meter.peak_memory_bytes,
+    )
+
+
 def _edge_weight(graph: MetroGraph, node: Node, neighbor: Node, cost_sec: float, kind: str, weights: Weights) -> float:
     if kind == "rail":
         fare_component = graph.fares[graph.lines[neighbor[1]]["operator"]]["per_station"]
@@ -276,7 +316,13 @@ def _edge_weight(graph: MetroGraph, node: Node, neighbor: Node, cost_sec: float,
 
 
 def _search(
-    graph: MetroGraph, start_id: str, goal_id: str, *, use_g_score: bool, weights: Weights = Weights()
+    graph: MetroGraph,
+    start_id: str,
+    goal_id: str,
+    *,
+    use_g_score: bool,
+    weights: Weights = Weights(),
+    trace_memory: bool = True,
 ) -> Route:
     _require_active(graph, start_id, goal_id)
 
@@ -286,16 +332,14 @@ def _search(
     g_score: dict[Node, float] = {}
     time_score: dict[Node, float] = {}
     visited: set[Node] = set()
-    nodes_expanded = 0
-    nodes_generated = 0
+    path: list[Node] | None = None
+    duration_sec = 0.0
 
-    tracemalloc.start()
-    start_time = time.perf_counter()
-    try:
+    with _Meter(trace_memory) as meter:
         for node in graph.start_nodes(start_id):
             g_score[node] = 0.0
             time_score[node] = 0.0
-            nodes_generated += 1
+            meter.generated += 1
             heapq.heappush(open_heap, (weights.time * graph.heuristic(node, goal_id), next(counter), node))
 
         while open_heap:
@@ -303,99 +347,103 @@ def _search(
             if node in visited:
                 continue
             visited.add(node)
-            nodes_expanded += 1
+            meter.expanded += 1
 
             if node[0] == goal_id:
                 path = _reconstruct(came_from, node)
-                _, peak = tracemalloc.get_traced_memory()
-                return Route(
-                    path=path,
-                    duration_sec=time_score[node],
-                    fare_thb=graph.fare_for(path),
-                    nodes_expanded=nodes_expanded,
-                    nodes_generated=nodes_generated,
-                    runtime_sec=time.perf_counter() - start_time,
-                    peak_memory_bytes=peak,
-                )
+                duration_sec = time_score[node]
+                break
 
             for neighbor, cost, kind in graph.neighbors(node):
+                meter.generated += 1
                 if neighbor in visited:
                     continue
                 tentative_g = g_score[node] + _edge_weight(graph, node, neighbor, cost, kind, weights)
-                if tentative_g < g_score.get(neighbor, math.inf):
-                    g_score[neighbor] = tentative_g
-                    time_score[neighbor] = time_score[node] + cost
-                    came_from[neighbor] = node
-                    h = weights.time * graph.heuristic(neighbor, goal_id)
-                    priority = tentative_g + h if use_g_score else h
-                    heapq.heappush(open_heap, (priority, next(counter), neighbor))
-                    nodes_generated += 1
+                if use_g_score:
+                    if tentative_g >= g_score.get(neighbor, math.inf):
+                        continue
+                elif neighbor in g_score:
+                    continue
+                g_score[neighbor] = tentative_g
+                time_score[neighbor] = time_score[node] + cost
+                came_from[neighbor] = node
+                h = weights.time * graph.heuristic(neighbor, goal_id)
+                heapq.heappush(open_heap, (tentative_g + h if use_g_score else h, next(counter), neighbor))
 
+    if path is None:
         raise NoRouteFoundError(f"no route from {start_id!r} to {goal_id!r} in scenario {graph.scenario!r}")
-    finally:
-        tracemalloc.stop()
+    return _route(graph, path, duration_sec, meter)
 
 
 def greedy_best_first_search(
-    graph: MetroGraph, start_id: str, goal_id: str, *, weights: Weights = Weights()
+    graph: MetroGraph, start_id: str, goal_id: str, *, weights: Weights = Weights(), trace_memory: bool = True
 ) -> Route:
-    return _search(graph, start_id, goal_id, use_g_score=False, weights=weights)
+    return _search(graph, start_id, goal_id, use_g_score=False, weights=weights, trace_memory=trace_memory)
 
 
-def astar_search(graph: MetroGraph, start_id: str, goal_id: str, *, weights: Weights = Weights()) -> Route:
-    return _search(graph, start_id, goal_id, use_g_score=True, weights=weights)
+def astar_search(
+    graph: MetroGraph, start_id: str, goal_id: str, *, weights: Weights = Weights(), trace_memory: bool = True
+) -> Route:
+    return _search(graph, start_id, goal_id, use_g_score=True, weights=weights, trace_memory=trace_memory)
 
 
-def hill_climbing_search(graph: MetroGraph, start_id: str, goal_id: str, *, weights: Weights = Weights()) -> Route:
+def hill_climbing_search(
+    graph: MetroGraph, start_id: str, goal_id: str, *, weights: Weights = Weights(), trace_memory: bool = True
+) -> Route:
     _require_active(graph, start_id, goal_id)
 
     def h(node: Node) -> float:
         return weights.time * graph.heuristic(node, goal_id)
 
-    current = min(graph.start_nodes(start_id), key=h)
+    starts = graph.start_nodes(start_id)
+    current = min(starts, key=h)
     path = [current]
     visited = {current}
-    time_accum = 0.0
-    nodes_expanded = 0
-    nodes_generated = 0
+    duration_sec = 0.0
+    stuck = ""
 
-    tracemalloc.start()
-    start_time = time.perf_counter()
-    try:
-        while current[0] != goal_id:
-            nodes_expanded += 1
-            candidates = [(n, cost) for n, cost, _kind in graph.neighbors(current) if n not in visited]
-            nodes_generated += len(candidates)
+    with _Meter(trace_memory) as meter:
+        meter.generated += len(starts)
+        while True:
+            meter.expanded += 1
+            if current[0] == goal_id:
+                break
+
+            candidates: list[tuple[Node, float]] = []
+            for neighbor, cost, _kind in graph.neighbors(current):
+                meter.generated += 1
+                if neighbor not in visited:
+                    candidates.append((neighbor, cost))
+
             if not candidates:
-                raise NoRouteFoundError(
-                    f"hill climbing stuck at {current!r} (dead end) en route {start_id!r} -> {goal_id!r}"
-                )
+                stuck = "dead end"
+                break
+
             best_node, best_cost = min(candidates, key=lambda nc: h(nc[0]))
             if h(best_node) > h(current):
-                raise NoRouteFoundError(
-                    f"hill climbing stuck at {current!r} (local optimum) en route {start_id!r} -> {goal_id!r}"
-                )
-            time_accum += best_cost
+                stuck = "local optimum"
+                break
+
+            duration_sec += best_cost
             current = best_node
             path.append(current)
             visited.add(current)
 
-        _, peak = tracemalloc.get_traced_memory()
-        return Route(
-            path=path,
-            duration_sec=time_accum,
-            fare_thb=graph.fare_for(path),
-            nodes_expanded=nodes_expanded,
-            nodes_generated=nodes_generated,
-            runtime_sec=time.perf_counter() - start_time,
-            peak_memory_bytes=peak,
+    if stuck:
+        raise NoRouteFoundError(
+            f"hill climbing stuck at {current!r} ({stuck}) en route {start_id!r} -> {goal_id!r}"
         )
-    finally:
-        tracemalloc.stop()
+    return _route(graph, path, duration_sec, meter)
 
 
 def beam_search(
-    graph: MetroGraph, start_id: str, goal_id: str, *, weights: Weights = Weights(), beam_width: int = 5
+    graph: MetroGraph,
+    start_id: str,
+    goal_id: str,
+    *,
+    weights: Weights = Weights(),
+    beam_width: int = 5,
+    trace_memory: bool = True,
 ) -> Route:
     if beam_width < 1:
         raise ValueError("beam_width must be >= 1")
@@ -404,86 +452,79 @@ def beam_search(
     def h(node: Node) -> float:
         return weights.time * graph.heuristic(node, goal_id)
 
-    beam = [(0.0, 0.0, [node]) for node in graph.start_nodes(start_id)]
-    nodes_expanded = 0
-    nodes_generated = len(beam)
-    max_rounds = 2 * max(graph.num_nodes, 1)
+    def best_at_goal(entries: list[tuple[float, float, list[Node]]]) -> tuple[float, float, list[Node]] | None:
+        reached = [entry for entry in entries if entry[2][-1][0] == goal_id]
+        return min(reached, key=lambda entry: entry[0]) if reached else None
 
-    tracemalloc.start()
-    start_time = time.perf_counter()
-    try:
+    beam = [(0.0, 0.0, [node]) for node in graph.start_nodes(start_id)]
+    max_rounds = 2 * max(graph.num_nodes, 1)
+    found: tuple[float, float, list[Node]] | None = None
+
+    with _Meter(trace_memory) as meter:
+        meter.generated += len(beam)
         for _ in range(max_rounds):
-            for _weighted_g, time_g, path in beam:
-                if path[-1][0] == goal_id:
-                    _, peak = tracemalloc.get_traced_memory()
-                    return Route(
-                        path=path,
-                        duration_sec=time_g,
-                        fare_thb=graph.fare_for(path),
-                        nodes_expanded=nodes_expanded,
-                        nodes_generated=nodes_generated,
-                        runtime_sec=time.perf_counter() - start_time,
-                        peak_memory_bytes=peak,
-                    )
+            found = best_at_goal(beam)
+            if found is not None:
+                meter.expanded += 1
+                break
 
             candidates: list[tuple[float, float, list[Node]]] = []
             for weighted_g, time_g, path in beam:
                 node = path[-1]
                 in_path = set(path)
-                nodes_expanded += 1
+                meter.expanded += 1
                 for neighbor, cost, kind in graph.neighbors(node):
+                    meter.generated += 1
                     if neighbor in in_path:
                         continue
                     new_weighted_g = weighted_g + _edge_weight(graph, node, neighbor, cost, kind, weights)
                     candidates.append((new_weighted_g, time_g + cost, path + [neighbor]))
 
             if not candidates:
-                raise NoRouteFoundError(
-                    f"beam search exhausted all candidates (width={beam_width}) en route "
-                    f"{start_id!r} -> {goal_id!r}"
-                )
-            nodes_generated += len(candidates)
-            candidates.sort(key=lambda c: c[0] + h(c[2][-1]))
+                break
+
+            candidates.sort(key=lambda entry: entry[0] + h(entry[2][-1]))
             beam = candidates[:beam_width]
+        else:
+            found = best_at_goal(beam)
 
+    if found is None:
         raise NoRouteFoundError(
-            f"beam search did not converge within {max_rounds} rounds (width={beam_width}) en route "
-            f"{start_id!r} -> {goal_id!r}"
+            f"beam search exhausted the beam (width={beam_width}) en route {start_id!r} -> {goal_id!r}"
         )
-    finally:
-        tracemalloc.stop()
+    return _route(graph, found[2], found[1], meter)
 
 
-def ida_star_search(graph: MetroGraph, start_id: str, goal_id: str, *, weights: Weights = Weights()) -> Route:
+def ida_star_search(
+    graph: MetroGraph, start_id: str, goal_id: str, *, weights: Weights = Weights(), trace_memory: bool = True
+) -> Route:
     _require_active(graph, start_id, goal_id)
 
     def h(node: Node) -> float:
         return weights.time * graph.heuristic(node, goal_id)
 
     starts = graph.start_nodes(start_id)
-    nodes_expanded = 0
-    nodes_generated = len(starts)
     max_rounds = 10_000
+    solution: tuple[list[Node], float] | None = None
+    exhausted = False
 
-    tracemalloc.start()
-    start_time = time.perf_counter()
-    try:
+    with _Meter(trace_memory) as meter:
+        meter.generated += len(starts)
 
         def dfs(path: list[Node], on_path: set[Node], g: float, time_g: float, limit: float) -> tuple[bool, float]:
-            nonlocal nodes_expanded, nodes_generated
             node = path[-1]
             f = g + h(node)
             if f > limit:
                 return False, f
-            nodes_expanded += 1
+            meter.expanded += 1
             if node[0] == goal_id:
                 return True, time_g
 
             next_limit = math.inf
             for neighbor, cost, kind in graph.neighbors(node):
+                meter.generated += 1
                 if neighbor in on_path:
                     continue
-                nodes_generated += 1
                 path.append(neighbor)
                 on_path.add(neighbor)
                 edge_g = g + _edge_weight(graph, node, neighbor, cost, kind, weights)
@@ -503,29 +544,51 @@ def ida_star_search(graph: MetroGraph, start_id: str, goal_id: str, *, weights: 
                 path = [root]
                 found, value = dfs(path, {root}, 0.0, 0.0, threshold)
                 if found:
-                    _, peak = tracemalloc.get_traced_memory()
-                    return Route(
-                        path=path,
-                        duration_sec=value,
-                        fare_thb=graph.fare_for(path),
-                        nodes_expanded=nodes_expanded,
-                        nodes_generated=nodes_generated,
-                        runtime_sec=time.perf_counter() - start_time,
-                        peak_memory_bytes=peak,
-                    )
+                    solution = (path, value)
+                    break
                 next_threshold = min(next_threshold, value)
 
+            if solution is not None:
+                break
             if next_threshold == math.inf:
-                raise NoRouteFoundError(
-                    f"no route from {start_id!r} to {goal_id!r} in scenario {graph.scenario!r}"
-                )
+                exhausted = True
+                break
             threshold = next_threshold
 
+    if solution is None:
+        if exhausted:
+            raise NoRouteFoundError(f"no route from {start_id!r} to {goal_id!r} in scenario {graph.scenario!r}")
         raise NoRouteFoundError(
             f"IDA* did not converge within {max_rounds} rounds en route {start_id!r} -> {goal_id!r}"
         )
-    finally:
-        tracemalloc.stop()
+    return _route(graph, solution[0], solution[1], meter)
+
+
+def optimal_duration(graph: MetroGraph, start_id: str, goal_id: str) -> float:
+    _require_active(graph, start_id, goal_id)
+
+    counter = itertools.count()
+    heap: list[tuple[float, int, Node]] = []
+    dist: dict[Node, float] = {}
+    visited: set[Node] = set()
+
+    for node in graph.start_nodes(start_id):
+        dist[node] = 0.0
+        heapq.heappush(heap, (0.0, next(counter), node))
+
+    while heap:
+        travelled, _, node = heapq.heappop(heap)
+        if node in visited:
+            continue
+        visited.add(node)
+        if node[0] == goal_id:
+            return travelled
+        for neighbor, cost, _kind in graph.neighbors(node):
+            if travelled + cost < dist.get(neighbor, math.inf):
+                dist[neighbor] = travelled + cost
+                heapq.heappush(heap, (travelled + cost, next(counter), neighbor))
+
+    raise NoRouteFoundError(f"no route from {start_id!r} to {goal_id!r} in scenario {graph.scenario!r}")
 
 
 ALGORITHMS = {
