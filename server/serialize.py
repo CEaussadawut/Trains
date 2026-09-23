@@ -39,6 +39,22 @@ def network_payload(graph: MetroGraph, full: MetroGraph | None = None) -> dict:
     rather than appearing from nothing.
     """
     full = full if full is not None else graph
+    sequences = line_sequences(full)
+
+    # Only six stations in the whole network serve two lines; almost every real
+    # interchange is a *pair* of stations joined by a walk. Treating only the
+    # former as interchanges badly understates which stations matter, so count
+    # anything a transfer touches, plus the terminus of every line.
+    interchanges = {
+        station_id
+        for node, neighbors in full.adjacency.items()
+        for neighbor, _cost, kind in neighbors
+        if kind == "transfer"
+        for station_id in (node[0], neighbor[0])
+    }
+    terminals = {order[0] for order in sequences.values() if order}
+    terminals |= {order[-1] for order in sequences.values() if order}
+
     stations = []
     for station in graph.stations.values():
         active_lines = graph.active_station_lines(station.id)
@@ -54,7 +70,8 @@ def network_payload(graph: MetroGraph, full: MetroGraph | None = None) -> dict:
             "lines": station.lines,
             "active_lines": active_lines,
             "active": bool(active_lines),
-            "interchange": len(station.lines) > 1,
+            "interchange": len(station.lines) > 1 or station.id in interchanges,
+            "terminal": station.id in terminals,
         })
 
     lines = []
@@ -70,6 +87,9 @@ def network_payload(graph: MetroGraph, full: MetroGraph | None = None) -> dict:
             "status": row["status"],
             "mode": row["mode"],
             "active": line_id in graph.active_lines,
+            # Stations in running order, so a picker can list them the way a
+            # passenger thinks of them rather than alphabetically.
+            "stations": sequences.get(line_id, []),
         })
 
     # Edges come straight out of the adjacency, deduplicated -- the graph stores
@@ -206,3 +226,55 @@ def route_payload(graph: MetroGraph, route: Route) -> dict:
         "peak_memory_bytes": route.peak_memory_bytes,
         "itinerary": itinerary(graph, route.path),
     }
+
+
+def line_sequences(full: MetroGraph) -> dict[str, list[str]]:
+    """Station ids in running order along each line.
+
+    A picker that lists stations alphabetically is useless for choosing a
+    journey; people think in terms of position along a line. The dataset stores
+    no ordering, so walk each line's own edge chain from one of its terminals.
+    """
+    by_line: dict[str, dict[str, set[str]]] = {}
+    for node, neighbors in full.adjacency.items():
+        station_id, line_id = node
+        for neighbor, _cost, kind in neighbors:
+            if kind != "rail" or neighbor[1] != line_id:
+                continue
+            adjacency = by_line.setdefault(line_id, {})
+            adjacency.setdefault(station_id, set()).add(neighbor[0])
+            adjacency.setdefault(neighbor[0], set()).add(station_id)
+
+    sequences: dict[str, list[str]] = {}
+    for line_id, adjacency in by_line.items():
+        terminals = sorted(s for s, links in adjacency.items() if len(links) == 1)
+        # A ring line has no terminal; start somewhere deterministic instead.
+        start = terminals[0] if terminals else sorted(adjacency)[0]
+
+        order: list[str] = []
+        seen: set[str] = set()
+        current: str | None = start
+        while current is not None:
+            order.append(current)
+            seen.add(current)
+            # At a junction prefer the branch that runs furthest, so the trunk
+            # is listed before a short spur.
+            candidates = sorted(adjacency[current] - seen)
+            current = max(candidates, key=lambda s: _reach(adjacency, s, seen), default=None)
+
+        # Anything on a detached spur still belongs in the list.
+        for station_id in sorted(adjacency):
+            if station_id not in seen:
+                order.append(station_id)
+        sequences[line_id] = order
+    return sequences
+
+
+def _reach(adjacency: dict[str, set[str]], start: str, blocked: set[str]) -> int:
+    seen = {start}
+    stack = [start]
+    while stack:
+        for neighbor in adjacency[stack.pop()] - seen - blocked:
+            seen.add(neighbor)
+            stack.append(neighbor)
+    return len(seen)

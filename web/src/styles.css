@@ -117,8 +117,19 @@ button.primary:disabled { background: var(--surface-2); color: var(--muted); cur
 .stn-current .ring { animation: pulse 1.1s ease-in-out infinite; }
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
 
-.label { fill: var(--muted); pointer-events: none; }
-.label-strong { fill: var(--ink); font-weight: 600; }
+/* The halo is what makes a label readable over a line or another label:
+   the text is stroked in the page colour underneath its own fill.
+   non-scaling-stroke keeps that ring 3px on screen at any zoom. */
+.label {
+  fill: var(--ink-2);
+  pointer-events: none;
+  paint-order: stroke fill;
+  stroke: var(--plane);
+  stroke-width: 3.5px;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+.label-strong { fill: var(--ink); font-weight: 650; stroke-width: 4.5px; }
 
 .map-tools {
   position: absolute; right: 12px; top: 12px; display: flex; gap: 8px; align-items: center;
@@ -249,3 +260,60 @@ button.primary:disabled { background: var(--surface-2); color: var(--muted); cur
 }
 .tooltip p { margin: 3px 0 0; display: flex; align-items: center; gap: 6px; color: var(--ink-2); }
 .tooltip .swatch { width: 9px; height: 9px; border-radius: 2px; display: inline-block; }
+
+/* ---- station picker ---- */
+.picker { position: relative; }
+.picker-value {
+  display: flex; align-items: center; gap: 8px; width: 100%;
+  background: var(--surface-1); border: 1px solid var(--border);
+  border-radius: 8px; padding: 8px 10px; cursor: pointer; text-align: left;
+}
+.picker-value.on { border-color: var(--series-1); }
+.picker-value:hover { background: var(--surface-2); }
+.picker-swatches { display: flex; gap: 2px; flex: none; }
+.picker-swatches .key { width: 4px; height: 14px; border-radius: 2px; }
+.picker-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.picker-id, .option-id {
+  font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; flex: none;
+}
+.picker-empty { flex: 1; color: var(--muted); }
+.picker-caret { color: var(--muted); font-size: 10px; flex: none; }
+
+.picker-pop {
+  position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 40;
+  background: var(--surface-1); border: 1px solid var(--border);
+  border-radius: 10px; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.picker-search {
+  border: 0; border-bottom: 1px solid var(--border); background: var(--surface-2);
+  padding: 10px 12px; outline: none;
+}
+.picker-search::placeholder { color: var(--muted); }
+.picker-list { max-height: 340px; overflow-y: auto; padding: 4px; }
+.picker-none { padding: 16px 12px; color: var(--muted); font-size: 12px; margin: 0; }
+
+.picker-group + .picker-group { margin-top: 6px; }
+.picker-group-head {
+  display: flex; align-items: center; gap: 7px;
+  padding: 7px 8px 4px; font-size: 11px; color: var(--ink-2);
+  position: sticky; top: -4px; background: var(--surface-1);
+}
+.picker-group-head .key { width: 4px; height: 12px; border-radius: 2px; }
+.picker-group-head b { font-weight: 600; flex: 1; }
+.picker-group-head span { color: var(--muted); font-variant-numeric: tabular-nums; }
+
+.option {
+  display: flex; align-items: center; gap: 8px; width: 100%;
+  background: none; border: 0; border-radius: 7px; padding: 5px 8px;
+  cursor: pointer; text-align: left;
+}
+.option.at { background: var(--surface-2); }
+.option.picked { outline: 1px solid var(--series-1); }
+.option-pos {
+  width: 20px; flex: none; text-align: right; font-size: 11px;
+  color: var(--muted); font-variant-numeric: tabular-nums;
+}
+.option-name { flex: 1; font-size: 13px; overflow: hidden; }
+.option-name small { display: block; font-size: 11px; color: var(--muted); }
+.option-x { color: var(--series-1); font-size: 12px; flex: none; }

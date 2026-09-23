@@ -15,7 +15,10 @@ export interface Station {
   lines: string[];
   active_lines: string[];
   active: boolean;
+  /** Serves two lines, or is joined to another station by a transfer walk. */
   interchange: boolean;
+  /** First or last station on some line. */
+  terminal: boolean;
 }
 
 export interface Line {
@@ -29,6 +32,8 @@ export interface Line {
   status: Scenario;
   mode: string;
   active: boolean;
+  /** Station ids in running order along the line, not alphabetical. */
+  stations: string[];
 }
 
 export interface Edge {

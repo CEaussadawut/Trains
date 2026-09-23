@@ -1,38 +1,13 @@
 import { useMemo } from "react";
 import type { Algorithm, Scenario } from "../api/types";
 import { useStore } from "../state/store";
+import { StationPicker } from "./StationPicker";
 
 const SCENARIO_LABEL: Record<Scenario, string> = {
   operating: "Operating today",
   under_construction: "+ Under construction",
   planned: "+ Planned",
 };
-
-function StationSelect({
-  label, value, onChange,
-}: { label: string; value: string | null; onChange: (id: string) => void }) {
-  const network = useStore((s) => s.network);
-  const options = useMemo(
-    () =>
-      (network?.stations ?? [])
-        .filter((station) => station.active)
-        .sort((a, b) => a.name_en.localeCompare(b.name_en)),
-    [network],
-  );
-  return (
-    <label className="field">
-      <span>{label}</span>
-      <select value={value ?? ""} onChange={(event) => onChange(event.target.value)}>
-        <option value="" disabled>choose a station…</option>
-        {options.map((station) => (
-          <option key={station.id} value={station.id}>
-            {station.name_en} ({station.id})
-          </option>
-        ))}
-      </select>
-    </label>
-  );
-}
 
 function WeightSlider({
   name, value, max, step, hint, onChange,
@@ -99,8 +74,8 @@ export function Controls() {
         </select>
       </label>
 
-      <StationSelect label="From" value={start} onChange={(id) => setEndpoints(id, goal)} />
-      <StationSelect label="To" value={goal} onChange={(id) => setEndpoints(start, id)} />
+      <StationPicker label="From" value={start} onChange={(id) => setEndpoints(id, goal)} />
+      <StationPicker label="To" value={goal} onChange={(id) => setEndpoints(start, id)} />
       <p className="hint">Or click two stations on the map.</p>
 
       {mode === "animate" && (

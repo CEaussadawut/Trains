@@ -95,6 +95,62 @@ class NetworkTest(ApiTestCase):
             self.assertIsInstance(station["lat"], float)
             self.assertIn(station["label_side"], {"left", "right"})
 
+    def test_lines_list_their_stations_in_running_order(self) -> None:
+        """A picker sorted alphabetically is useless for planning a journey."""
+        _status, body = self.get("/api/network?scenario=operating")
+        lines = {line["id"]: line for line in body["lines"]}
+
+        silom = lines["SILOM"]["stations"]
+        self.assertEqual(silom[:3], ["S12", "S11", "S10"])
+        self.assertEqual(silom[-2:], ["CEN", "W1"])
+
+        # Every station of every line appears exactly once.
+        for line in body["lines"]:
+            on_line = {s["id"] for s in body["stations"] if line["id"] in s["lines"]}
+            self.assertEqual(len(line["stations"]), len(set(line["stations"])), line["id"])
+            self.assertEqual(set(line["stations"]), on_line, line["id"])
+
+    def test_consecutive_listed_stations_are_actually_adjacent(self) -> None:
+        _status, body = self.get("/api/network?scenario=planned")
+        rail = {
+            frozenset((edge["from"], edge["to"])): edge["line"]
+            for edge in body["edges"]
+        }
+        for line in body["lines"]:
+            order = line["stations"]
+            breaks = sum(
+                1 for a, b in zip(order, order[1:])
+                if rail.get(frozenset((a, b))) != line["id"]
+            )
+            # A line with a spur has one unavoidable jump where the walk
+            # restarts; anything more means the ordering is wrong.
+            self.assertLessEqual(breaks, 1, f"{line['id']} order jumps {breaks} times")
+
+    def test_interchanges_count_stations_joined_by_a_walk(self) -> None:
+        """Only six stations serve two lines; most interchanges are station pairs."""
+        _status, body = self.get("/api/network?scenario=operating")
+        active = [s for s in body["stations"] if s["active"]]
+        multi_line = [s for s in active if len(s["active_lines"]) > 1]
+        interchanges = [s for s in active if s["interchange"]]
+        # Only Siam and Si Rat serve two open lines, but 50+ stations are part
+        # of an interchange. Labelling only the former would hide almost every
+        # junction on the map.
+        self.assertEqual(len(multi_line), 2)
+        self.assertGreater(len(interchanges), 40)
+        self.assertTrue(set(s["id"] for s in multi_line) <= set(s["id"] for s in interchanges))
+        # Siam serves two lines; Asok is joined to Sukhumvit by a walk.
+        self.assertTrue(next(s for s in active if s["id"] == "CEN")["interchange"])
+        self.assertTrue(next(s for s in active if s["id"] == "E4")["interchange"])
+
+    def test_line_terminals_are_flagged(self) -> None:
+        _status, body = self.get("/api/network?scenario=operating")
+        by_id = {s["id"]: s for s in body["stations"]}
+        for line in body["lines"]:
+            if not line["active"] or not line["stations"]:
+                continue
+            self.assertTrue(by_id[line["stations"][0]]["terminal"], line["id"])
+            self.assertTrue(by_id[line["stations"][-1]]["terminal"], line["id"])
+
     def test_unknown_scenario_is_rejected(self) -> None:
         status, body = self.get("/api/network?scenario=tomorrow")
         self.assertEqual(status, 400)

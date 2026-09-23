@@ -1,7 +1,8 @@
 import { memo, useCallback, useMemo, useRef, useState } from "react";
 import type { Station } from "../api/types";
+import { placeLabels } from "../map/labels";
 import { VIEW, positionAt, type Point } from "../map/layouts";
-import { keyOf, stationOf, type VisualState } from "../map/replay";
+import { stationOf, type VisualState } from "../map/replay";
 import { useStore } from "../state/store";
 
 type StationState =
@@ -10,7 +11,10 @@ type StationState =
 
 interface Transform { k: number; x: number; y: number }
 
-const LABEL_ZOOM = 1.6;
+// Interchanges earn a label sooner than ordinary stops; everything else
+// waits until there is room for it.
+const INTERCHANGE_ZOOM = 0.9;
+const ALL_LABELS_ZOOM = 1.6;
 
 /** Search state never touches line colour: hue means geography, rings mean algorithm. */
 const STATE_RING: Partial<Record<StationState, string>> = {
@@ -126,6 +130,33 @@ export function MetroMap() {
     return segments;
   }, [visual, linesById]);
 
+  const pathStations = useMemo(
+    () => new Set(visual?.finalPath?.map((node) => node[0]) ?? []),
+    [visual],
+  );
+
+  const labels = useMemo(() => {
+    if (!network) return [];
+    const interchanges = transform.k >= INTERCHANGE_ZOOM;
+    const everything = transform.k >= ALL_LABELS_ZOOM;
+    return placeLabels({
+      stations: network.stations,
+      positions,
+      k: transform.k,
+      rank: (station) => {
+        if (station.id === start || station.id === goal) return 0;
+        if (station.id === hovered) return 1;
+        if (visual?.current?.[0] === station.id) return 2;
+        if (visual?.stuckAt?.[0] === station.id) return 3;
+        if (pathStations.has(station.id)) return 10;
+        if (!station.active) return everything ? 400 : Infinity;
+        if (station.interchange) return interchanges ? 50 : Infinity;
+        if (station.terminal) return interchanges ? 60 : Infinity;
+        return everything ? 200 : Infinity;
+      },
+    });
+  }, [network, positions, transform.k, start, goal, hovered, visual, pathStations]);
+
   const onWheel = useCallback((event: React.WheelEvent) => {
     event.preventDefault();
     const rect = svgRef.current?.getBoundingClientRect();
@@ -160,10 +191,12 @@ export function MetroMap() {
 
   if (!network || !layouts) return <div className="map-empty">loading network…</div>;
 
-  const radius = 3.4 / Math.sqrt(transform.k);
+  // Dots grow far more slowly than the map, so they stay in proportion to the
+  // constant-size labels: ~3.4px on screen at default zoom, ~6.6px at 14x.
+  // Scaling them with the map made the state rings dwarf the text; pinning
+  // them to a constant made them vanish.
+  const radius = 3.4 / Math.pow(transform.k, 0.75);
   const strokeScale = 1 / Math.sqrt(transform.k);
-  const showLabels = transform.k >= LABEL_ZOOM;
-  const pathStations = new Set(visual?.finalPath?.map((node) => node[0]) ?? []);
 
   return (
     <div className="map-wrap">
@@ -242,25 +275,14 @@ export function MetroMap() {
             );
           })}
 
-          {network.stations.map((station) => {
-            const point = positions.get(station.id);
-            if (!point) return null;
-            const important =
-              hovered === station.id || station.id === start || station.id === goal ||
-              pathStations.has(station.id);
-            if (!showLabels && !important) return null;
-            const left = station.label_side === "left";
-            return (
-              <text key={`l-${station.id}`}
-                x={point.x + (left ? -7 : 7) * strokeScale}
-                y={point.y + 3.5 * strokeScale}
-                textAnchor={left ? "end" : "start"}
-                className={`label ${important ? "label-strong" : ""}`}
-                fontSize={11 * strokeScale}>
-                {station.name_en}
-              </text>
-            );
-          })}
+          {labels.map((label) => (
+            <text key={`l-${label.id}`}
+              x={label.x} y={label.y} textAnchor={label.anchor}
+              className={`label ${label.important ? "label-strong" : ""}`}
+              fontSize={label.fontSize}>
+              {label.name}
+            </text>
+          ))}
         </g>
       </svg>
 
