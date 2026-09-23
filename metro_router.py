@@ -53,6 +53,9 @@ class Station:
     lat: float
     lon: float
     lines: list[str]
+    map_x: float = 0.0
+    map_y: float = 0.0
+    label_side: str = "right"
 
     @classmethod
     def from_row(cls, row: dict[str, str]) -> Station:
@@ -63,6 +66,9 @@ class Station:
             lat=float(row["lat"]),
             lon=float(row["lon"]),
             lines=row["lines"].split("|"),
+            map_x=float(row["map_x"]),
+            map_y=float(row["map_y"]),
+            label_side=row["label_side"] or "right",
         )
 
 
@@ -96,6 +102,187 @@ class Route:
     @property
     def transfers(self) -> int:
         return sum(1 for (_, line_a), (_, line_b) in zip(self.path, self.path[1:]) if line_a != line_b)
+
+
+TRACE_DETAIL = ("full", "expansions")
+TRACE_PHASES = ("all", "last")
+
+
+@dataclass
+class TraceEvent:
+    kind: str
+    payload: dict
+
+
+class Tracer:
+    """Records the step-by-step behaviour of a search so a UI can replay it.
+
+    Tracing is opt-in: every search takes ``tracer=None`` by default and skips
+    each call site, so an untraced run stays byte-for-byte the search it always
+    was and benchmark timings remain comparable.
+
+    ``max_events`` bounds the recording. IDA* re-expands the tree once per
+    threshold and can generate over a million events on this network, so
+    ``keep_phases="last"`` keeps every phase *summary* while discarding all but
+    the final phase's detail -- you still see the whole threshold ladder, and
+    you get full detail for the round that actually finds the goal.
+    """
+
+    def __init__(
+        self,
+        max_events: int = 20_000,
+        detail: str = "full",
+        keep_phases: str = "all",
+        frontier_limit: int = 12,
+        prune_limit: int = 20,
+    ) -> None:
+        if max_events < 1:
+            raise ValueError("max_events must be >= 1")
+        if detail not in TRACE_DETAIL:
+            raise ValueError(f"unknown detail {detail!r}, expected one of {list(TRACE_DETAIL)}")
+        if keep_phases not in TRACE_PHASES:
+            raise ValueError(f"unknown keep_phases {keep_phases!r}, expected one of {list(TRACE_PHASES)}")
+        if frontier_limit < 0 or prune_limit < 0:
+            raise ValueError("limits must be non-negative")
+
+        self.max_events = max_events
+        self.detail = detail
+        self.keep_phases = keep_phases
+        self.frontier_limit = frontier_limit
+        self.prune_limit = prune_limit
+
+        self.events: list[TraceEvent] = []
+        self.phases: list[dict] = []
+        self.truncated = False
+        self.dropped = 0
+        self.expanded = 0
+        self.generated = 0
+        self.seeded = 0
+
+    def _count(self, field: str) -> None:
+        setattr(self, field, getattr(self, field) + 1)
+        if self.phases:
+            phase = self.phases[-1]
+            phase[field] = phase[field] + 1
+
+    def _append(self, kind: str, payload: dict) -> None:
+        if len(self.events) >= self.max_events:
+            self.truncated = True
+            self.dropped += 1
+            return
+        self.events.append(TraceEvent(kind, payload))
+
+    @staticmethod
+    def _top(entries: list[tuple[float, Node, bool]], limit: int) -> list[dict]:
+        return [
+            {"node": node, "priority": priority, "stale": stale}
+            for priority, node, stale in sorted(entries, key=lambda item: item[0])[:limit]
+        ]
+
+    def seed(self, entries: list[tuple[Node, float]]) -> None:
+        self.seeded += len(entries)
+        self._append("seed", {"nodes": [{"node": node, "h": h} for node, h in entries]})
+
+    def expand(
+        self,
+        node: Node,
+        g: float,
+        h: float,
+        f: float,
+        frontier: list[tuple[float, Node, bool]] | None = None,
+        depth: int | None = None,
+    ) -> None:
+        self._count("expanded")
+        payload: dict = {"node": node, "g": g, "h": h, "f": f}
+        if depth is not None:
+            payload["depth"] = depth
+        if frontier is not None:
+            payload["frontier"] = self._top(frontier, self.frontier_limit)
+            payload["frontier_size"] = len(frontier)
+        self._append("expand", payload)
+
+    def generate(
+        self,
+        parent: Node,
+        node: Node,
+        cost: float,
+        kind: str,
+        action: str,
+        g: float | None = None,
+        h: float | None = None,
+        f: float | None = None,
+    ) -> None:
+        self._count("generated")
+        if self.detail != "full":
+            return
+        payload: dict = {"parent": parent, "node": node, "cost": cost, "edge": kind, "action": action}
+        for key, value in (("g", g), ("h", h), ("f", f)):
+            if value is not None:
+                payload[key] = value
+        self._append("generate", payload)
+
+    def phase(self, label: str, **info: object) -> None:
+        if self.keep_phases == "last" and self.phases:
+            previous = self.phases[-1]
+            start = previous["_detail_start"]
+            previous["events_dropped"] = len(self.events) - start
+            del self.events[start:]
+        index = len(self.phases)
+        entry: dict = {"label": label, "index": index, "expanded": 0, "generated": 0, **info}
+        self.phases.append(entry)
+        self._append("phase", {"label": label, "index": index, **info})
+        entry["_detail_start"] = len(self.events)
+
+    def update_phase(self, **info: object) -> None:
+        if self.phases:
+            self.phases[-1].update(info)
+
+    def prune(self, kept: list[tuple[Node, float]], dropped: list[tuple[Node, float]]) -> None:
+        self._append(
+            "prune",
+            {
+                "kept": [{"node": node, "f": score} for node, score in kept],
+                "dropped": [{"node": node, "f": score} for node, score in dropped[: self.prune_limit]],
+                "dropped_total": len(dropped),
+            },
+        )
+
+    def backtrack(self, node: Node, reason: str, f: float, limit: float) -> None:
+        self._append("backtrack", {"node": node, "reason": reason, "f": f, "limit": limit})
+
+    def stuck(self, node: Node, reason: str, h_current: float, h_best: float | None) -> None:
+        payload: dict = {"node": node, "reason": reason, "h": h_current}
+        if h_best is not None:
+            payload["h_best"] = h_best
+        self._append("stuck", payload)
+
+    def solution(self, path: list[Node], duration_sec: float) -> None:
+        self._append("solution", {"path": list(path), "duration_sec": duration_sec})
+
+    @classmethod
+    def _json_safe(cls, value: object) -> object:
+        if isinstance(value, float):
+            return value if math.isfinite(value) else None
+        if isinstance(value, dict):
+            return {key: cls._json_safe(item) for key, item in value.items()}
+        if isinstance(value, (list, tuple)):
+            return [cls._json_safe(item) for item in value]
+        return value
+
+    def to_dict(self) -> dict:
+        return {
+            "events": [self._json_safe({"kind": event.kind, **event.payload}) for event in self.events],
+            "phases": [
+                self._json_safe({k: v for k, v in phase.items() if not k.startswith("_")})
+                for phase in self.phases
+            ],
+            "truncated": self.truncated,
+            "dropped": self.dropped,
+            "detail": self.detail,
+            "keep_phases": self.keep_phases,
+            "max_events": self.max_events,
+            "counts": {"expanded": self.expanded, "generated": self.generated, "seeded": self.seeded},
+        }
 
 
 class MetroGraph:
@@ -323,6 +510,7 @@ def _search(
     use_g_score: bool,
     weights: Weights = Weights(),
     trace_memory: bool = True,
+    tracer: Tracer | None = None,
 ) -> Route:
     _require_active(graph, start_id, goal_id)
 
@@ -336,11 +524,16 @@ def _search(
     duration_sec = 0.0
 
     with _Meter(trace_memory) as meter:
+        seeds: list[tuple[Node, float]] = []
         for node in graph.start_nodes(start_id):
             g_score[node] = 0.0
             time_score[node] = 0.0
             meter.generated += 1
-            heapq.heappush(open_heap, (weights.time * graph.heuristic(node, goal_id), next(counter), node))
+            start_h = weights.time * graph.heuristic(node, goal_id)
+            heapq.heappush(open_heap, (start_h, next(counter), node))
+            seeds.append((node, start_h))
+        if tracer is not None:
+            tracer.seed(seeds)
 
         while open_heap:
             _, _, node = heapq.heappop(open_heap)
@@ -349,26 +542,49 @@ def _search(
             visited.add(node)
             meter.expanded += 1
 
+            if tracer is not None:
+                here_h = weights.time * graph.heuristic(node, goal_id)
+                tracer.expand(
+                    node,
+                    g_score[node],
+                    here_h,
+                    g_score[node] + here_h if use_g_score else here_h,
+                    frontier=[(priority, other, other in visited) for priority, _c, other in open_heap],
+                )
+
             if node[0] == goal_id:
                 path = _reconstruct(came_from, node)
                 duration_sec = time_score[node]
+                if tracer is not None:
+                    tracer.solution(path, duration_sec)
                 break
 
             for neighbor, cost, kind in graph.neighbors(node):
                 meter.generated += 1
                 if neighbor in visited:
+                    if tracer is not None:
+                        tracer.generate(node, neighbor, cost, kind, "skip_visited")
                     continue
                 tentative_g = g_score[node] + _edge_weight(graph, node, neighbor, cost, kind, weights)
                 if use_g_score:
                     if tentative_g >= g_score.get(neighbor, math.inf):
+                        if tracer is not None:
+                            tracer.generate(node, neighbor, cost, kind, "skip_worse", g=tentative_g)
                         continue
                 elif neighbor in g_score:
+                    if tracer is not None:
+                        tracer.generate(node, neighbor, cost, kind, "skip_seen", g=tentative_g)
                     continue
                 g_score[neighbor] = tentative_g
                 time_score[neighbor] = time_score[node] + cost
                 came_from[neighbor] = node
                 h = weights.time * graph.heuristic(neighbor, goal_id)
                 heapq.heappush(open_heap, (tentative_g + h if use_g_score else h, next(counter), neighbor))
+                if tracer is not None:
+                    tracer.generate(
+                        node, neighbor, cost, kind, "improved",
+                        g=tentative_g, h=h, f=tentative_g + h if use_g_score else h,
+                    )
 
     if path is None:
         raise NoRouteFoundError(f"no route from {start_id!r} to {goal_id!r} in scenario {graph.scenario!r}")
@@ -376,19 +592,43 @@ def _search(
 
 
 def greedy_best_first_search(
-    graph: MetroGraph, start_id: str, goal_id: str, *, weights: Weights = Weights(), trace_memory: bool = True
+    graph: MetroGraph,
+    start_id: str,
+    goal_id: str,
+    *,
+    weights: Weights = Weights(),
+    trace_memory: bool = True,
+    tracer: Tracer | None = None,
 ) -> Route:
-    return _search(graph, start_id, goal_id, use_g_score=False, weights=weights, trace_memory=trace_memory)
+    return _search(
+        graph, start_id, goal_id,
+        use_g_score=False, weights=weights, trace_memory=trace_memory, tracer=tracer,
+    )
 
 
 def astar_search(
-    graph: MetroGraph, start_id: str, goal_id: str, *, weights: Weights = Weights(), trace_memory: bool = True
+    graph: MetroGraph,
+    start_id: str,
+    goal_id: str,
+    *,
+    weights: Weights = Weights(),
+    trace_memory: bool = True,
+    tracer: Tracer | None = None,
 ) -> Route:
-    return _search(graph, start_id, goal_id, use_g_score=True, weights=weights, trace_memory=trace_memory)
+    return _search(
+        graph, start_id, goal_id,
+        use_g_score=True, weights=weights, trace_memory=trace_memory, tracer=tracer,
+    )
 
 
 def hill_climbing_search(
-    graph: MetroGraph, start_id: str, goal_id: str, *, weights: Weights = Weights(), trace_memory: bool = True
+    graph: MetroGraph,
+    start_id: str,
+    goal_id: str,
+    *,
+    weights: Weights = Weights(),
+    trace_memory: bool = True,
+    tracer: Tracer | None = None,
 ) -> Route:
     _require_active(graph, start_id, goal_id)
 
@@ -404,24 +644,38 @@ def hill_climbing_search(
 
     with _Meter(trace_memory) as meter:
         meter.generated += len(starts)
+        if tracer is not None:
+            tracer.seed([(node, h(node)) for node in starts])
         while True:
             meter.expanded += 1
+            if tracer is not None:
+                tracer.expand(current, duration_sec, h(current), h(current), frontier=[], depth=len(path) - 1)
             if current[0] == goal_id:
+                if tracer is not None:
+                    tracer.solution(path, duration_sec)
                 break
 
             candidates: list[tuple[Node, float]] = []
-            for neighbor, cost, _kind in graph.neighbors(current):
+            for neighbor, cost, kind in graph.neighbors(current):
                 meter.generated += 1
                 if neighbor not in visited:
                     candidates.append((neighbor, cost))
+                    if tracer is not None:
+                        tracer.generate(current, neighbor, cost, kind, "candidate", h=h(neighbor))
+                elif tracer is not None:
+                    tracer.generate(current, neighbor, cost, kind, "skip_visited")
 
             if not candidates:
                 stuck = "dead end"
+                if tracer is not None:
+                    tracer.stuck(current, stuck, h(current), None)
                 break
 
             best_node, best_cost = min(candidates, key=lambda nc: h(nc[0]))
             if h(best_node) > h(current):
                 stuck = "local optimum"
+                if tracer is not None:
+                    tracer.stuck(current, stuck, h(current), h(best_node))
                 break
 
             duration_sec += best_cost
@@ -444,6 +698,7 @@ def beam_search(
     weights: Weights = Weights(),
     beam_width: int = 5,
     trace_memory: bool = True,
+    tracer: Tracer | None = None,
 ) -> Route:
     if beam_width < 1:
         raise ValueError("beam_width must be >= 1")
@@ -462,10 +717,18 @@ def beam_search(
 
     with _Meter(trace_memory) as meter:
         meter.generated += len(beam)
-        for _ in range(max_rounds):
+        if tracer is not None:
+            tracer.seed([(entry[2][-1], h(entry[2][-1])) for entry in beam])
+        for round_index in range(max_rounds):
+            if tracer is not None:
+                tracer.phase("beam_round", round=round_index, beam_size=len(beam))
             found = best_at_goal(beam)
             if found is not None:
                 meter.expanded += 1
+                if tracer is not None:
+                    goal_node = found[2][-1]
+                    tracer.expand(goal_node, found[0], h(goal_node), found[0] + h(goal_node), frontier=[])
+                    tracer.solution(found[2], found[1])
                 break
 
             candidates: list[tuple[float, float, list[Node]]] = []
@@ -473,20 +736,40 @@ def beam_search(
                 node = path[-1]
                 in_path = set(path)
                 meter.expanded += 1
+                if tracer is not None:
+                    tracer.expand(
+                        node, weighted_g, h(node), weighted_g + h(node),
+                        frontier=[(g_b + h(p_b[-1]), p_b[-1], False) for g_b, _t_b, p_b in beam],
+                        depth=len(path) - 1,
+                    )
                 for neighbor, cost, kind in graph.neighbors(node):
                     meter.generated += 1
                     if neighbor in in_path:
+                        if tracer is not None:
+                            tracer.generate(node, neighbor, cost, kind, "skip_on_path")
                         continue
                     new_weighted_g = weighted_g + _edge_weight(graph, node, neighbor, cost, kind, weights)
                     candidates.append((new_weighted_g, time_g + cost, path + [neighbor]))
+                    if tracer is not None:
+                        tracer.generate(
+                            node, neighbor, cost, kind, "improved",
+                            g=new_weighted_g, h=h(neighbor), f=new_weighted_g + h(neighbor),
+                        )
 
             if not candidates:
                 break
 
             candidates.sort(key=lambda entry: entry[0] + h(entry[2][-1]))
+            if tracer is not None:
+                tracer.prune(
+                    [(entry[2][-1], entry[0] + h(entry[2][-1])) for entry in candidates[:beam_width]],
+                    [(entry[2][-1], entry[0] + h(entry[2][-1])) for entry in candidates[beam_width:]],
+                )
             beam = candidates[:beam_width]
         else:
             found = best_at_goal(beam)
+            if tracer is not None and found is not None:
+                tracer.solution(found[2], found[1])
 
     if found is None:
         raise NoRouteFoundError(
@@ -496,7 +779,13 @@ def beam_search(
 
 
 def ida_star_search(
-    graph: MetroGraph, start_id: str, goal_id: str, *, weights: Weights = Weights(), trace_memory: bool = True
+    graph: MetroGraph,
+    start_id: str,
+    goal_id: str,
+    *,
+    weights: Weights = Weights(),
+    trace_memory: bool = True,
+    tracer: Tracer | None = None,
 ) -> Route:
     _require_active(graph, start_id, goal_id)
 
@@ -510,24 +799,39 @@ def ida_star_search(
 
     with _Meter(trace_memory) as meter:
         meter.generated += len(starts)
+        if tracer is not None:
+            tracer.seed([(node, h(node)) for node in starts])
 
         def dfs(path: list[Node], on_path: set[Node], g: float, time_g: float, limit: float) -> tuple[bool, float]:
             node = path[-1]
             f = g + h(node)
             if f > limit:
+                if tracer is not None:
+                    tracer.backtrack(node, "over_threshold", f, limit)
                 return False, f
             meter.expanded += 1
+            if tracer is not None:
+                tracer.expand(node, g, h(node), f, frontier=[], depth=len(path) - 1)
             if node[0] == goal_id:
+                if tracer is not None:
+                    tracer.solution(path, time_g)
                 return True, time_g
 
             next_limit = math.inf
             for neighbor, cost, kind in graph.neighbors(node):
                 meter.generated += 1
                 if neighbor in on_path:
+                    if tracer is not None:
+                        tracer.generate(node, neighbor, cost, kind, "skip_on_path")
                     continue
                 path.append(neighbor)
                 on_path.add(neighbor)
                 edge_g = g + _edge_weight(graph, node, neighbor, cost, kind, weights)
+                if tracer is not None:
+                    tracer.generate(
+                        node, neighbor, cost, kind, "improved",
+                        g=edge_g, h=h(neighbor), f=edge_g + h(neighbor),
+                    )
                 found, value = dfs(path, on_path, edge_g, time_g + cost, limit)
                 if found:
                     return True, value
@@ -535,10 +839,14 @@ def ida_star_search(
                 on_path.discard(neighbor)
                 if value < next_limit:
                     next_limit = value
+            if tracer is not None:
+                tracer.backtrack(node, "exhausted", f, limit)
             return False, next_limit
 
         threshold = min(h(node) for node in starts)
-        for _ in range(max_rounds):
+        for round_index in range(max_rounds):
+            if tracer is not None:
+                tracer.phase("threshold", round=round_index, threshold=threshold)
             next_threshold = math.inf
             for root in starts:
                 path = [root]
@@ -549,10 +857,16 @@ def ida_star_search(
                 next_threshold = min(next_threshold, value)
 
             if solution is not None:
+                if tracer is not None:
+                    tracer.update_phase(solved=True)
                 break
             if next_threshold == math.inf:
                 exhausted = True
+                if tracer is not None:
+                    tracer.update_phase(exhausted=True)
                 break
+            if tracer is not None:
+                tracer.update_phase(next_threshold=next_threshold)
             threshold = next_threshold
 
     if solution is None:

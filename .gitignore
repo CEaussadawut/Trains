@@ -1,13 +1,24 @@
-.DS_Store
+# Python
 __pycache__/
 *.pyc
+*.egg-info/
 .venv/
 venv/
 .env
-*.egg-info/
 .pytest_cache/
+
+# Node / frontend build
+node_modules/
+web/dist/
+web/.vite/
+npm-debug.log*
+
+# Editors & OS
 .DS_Store
 .vscode/
-datasets/
+
+# Generated reports
+bench_*.md
+
+# Notebooks
 *.ipynb
-feature/heuristic-search
