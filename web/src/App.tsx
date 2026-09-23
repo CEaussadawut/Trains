@@ -92,7 +92,7 @@ export function App() {
       {error && <div className="banner banner-critical">⚠ {error}</div>}
       {loading && <div className="banner">Loading the network…</div>}
 
-      <div className="layout">
+      <div className={`layout${mode === "compare" ? " layout-wide" : ""}`}>
         <Controls />
 
         {mode === "animate" ? (

@@ -15,6 +15,10 @@ interface Transform { k: number; x: number; y: number }
 // waits until there is room for it.
 const INTERCHANGE_ZOOM = 0.9;
 const ALL_LABELS_ZOOM = 1.6;
+// Pushing the rest of the network back helps the route stand out when you are
+// looking at the whole city. Once you have zoomed in you are inspecting, not
+// scanning, so the map returns to full strength.
+const FOCUS_ZOOM = 2.5;
 
 /** Search state never touches line colour: hue means geography, rings mean algorithm. */
 const STATE_RING: Partial<Record<StationState, string>> = {
@@ -61,6 +65,13 @@ const StationDot = memo(function StationDot({
 }) {
   const ring = STATE_RING[state];
   const terminal = state === "start" || state === "goal";
+  const size = terminal
+    ? radius * 2.1
+    : state === "path"
+      ? radius * 1.55
+      : station.interchange
+        ? radius * 1.25
+        : radius;
   return (
     <g
       className={`stn stn-${state}`}
@@ -70,10 +81,8 @@ const StationDot = memo(function StationDot({
       onMouseLeave={() => onHover(null)}
     >
       {ring && <circle className="ring" r={radius * 2.6} fill="none" stroke={ring} strokeWidth={radius * 0.9} />}
-      <circle
-        r={terminal ? radius * 1.7 : station.interchange ? radius * 1.25 : radius}
-        className="dot"
-      />
+      {terminal && <circle className="halo" r={radius * 3.4} />}
+      <circle r={size} className="dot" />
       {/* Generous invisible hit target -- the visible dots are tiny. */}
       <circle r={Math.max(radius * 3, 9)} fill="transparent" />
     </g>
@@ -118,13 +127,15 @@ export function MetroMap() {
   const pathEdges = useMemo(() => {
     const path = visual?.finalPath;
     if (!path) return [];
-    const segments: { from: string; to: string; color: string }[] = [];
+    const segments: { from: string; to: string; color: string; transfer: boolean }[] = [];
     for (let i = 0; i < path.length - 1; i += 1) {
       const line = linesById.get(path[i + 1][1]);
+      const sameLine = path[i][1] === path[i + 1][1];
       segments.push({
         from: path[i][0],
         to: path[i + 1][0],
-        color: path[i][1] === path[i + 1][1] ? line?.color_hex ?? "#fff" : "var(--transfer)",
+        color: sameLine ? line?.color_hex ?? "#666" : "var(--ink)",
+        transfer: !sameLine,
       });
     }
     return segments;
@@ -203,7 +214,7 @@ export function MetroMap() {
       <svg
         ref={svgRef}
         viewBox={`0 0 ${VIEW.width} ${VIEW.height}`}
-        className="map"
+        className={`map${visual?.finalPath && transform.k < FOCUS_ZOOM ? " has-route" : ""}`}
         onWheel={onWheel}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
@@ -224,6 +235,7 @@ export function MetroMap() {
             );
           })}
 
+          <g className="layer-network">
           {network.edges.map((edge, index) => {
             const a = positions.get(edge.from);
             const b = positions.get(edge.to);
@@ -249,21 +261,36 @@ export function MetroMap() {
                 strokeDasharray="3 3" opacity={edge.active ? 0.6 : 0.15} />
             );
           })}
+          </g>
 
-          {/* The final route, drawn over the network with a casing for contrast. */}
-          {pathEdges.map((segment, index) => {
-            const a = positions.get(segment.from);
-            const b = positions.get(segment.to);
-            if (!a || !b) return null;
-            return (
-              <g key={`p${index}`}>
-                <line x1={a.x} y1={a.y} x2={b.x} y2={b.y}
-                  stroke="var(--route-casing)" strokeWidth={9 * strokeScale} strokeLinecap="round" />
-                <line x1={a.x} y1={a.y} x2={b.x} y2={b.y}
-                  stroke={segment.color} strokeWidth={5 * strokeScale} strokeLinecap="round" />
-              </g>
-            );
-          })}
+          {/* The answer. Every casing is drawn before any colour, so a casing
+              never cuts into the segment next to it. */}
+          {pathEdges.length > 0 && (
+            <g className="layer-route">
+              {pathEdges.map((segment, index) => {
+                const a = positions.get(segment.from);
+                const b = positions.get(segment.to);
+                if (!a || !b) return null;
+                return (
+                  <line key={`pc${index}`} x1={a.x} y1={a.y} x2={b.x} y2={b.y}
+                    stroke="var(--route-casing)" strokeWidth={16 * strokeScale}
+                    strokeLinecap="round" />
+                );
+              })}
+              {pathEdges.map((segment, index) => {
+                const a = positions.get(segment.from);
+                const b = positions.get(segment.to);
+                if (!a || !b) return null;
+                const dash = 4.5 * strokeScale;
+                return (
+                  <line key={`pl${index}`} x1={a.x} y1={a.y} x2={b.x} y2={b.y}
+                    stroke={segment.color} strokeWidth={9 * strokeScale}
+                    strokeLinecap="round"
+                    strokeDasharray={segment.transfer ? `${dash} ${dash}` : undefined} />
+                );
+              })}
+            </g>
+          )}
 
           {network.stations.map((station) => {
             const point = positions.get(station.id);

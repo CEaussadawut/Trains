@@ -1,21 +1,22 @@
 /** Chart tokens.
  *
- * These are the reference data-viz palette's DARK steps, used unmodified:
+ * These are the reference data-viz palette's LIGHT steps, used unmodified:
  * categorical slots 1-2 for the two-series charts, status `critical` for the
- * genuine failure state (an algorithm that returns no route). Line colours from
- * the metro map are never reused here -- on this page hue means series, and a
- * status colour always ships with a label, never alone.
+ * genuine failure state (an algorithm that returns no route). Metro line
+ * colours are never reused here -- on this page hue means series, and a status
+ * colour always ships with a label, never alone. A table view of every chart
+ * is always on screen, which satisfies the palette's relief rule.
  */
 export const VIZ = {
-  surface: "#1a1a19",
-  grid: "#2c2c2a",
-  axis: "#383835",
+  surface: "#fcfcfb",
+  grid: "#e1e0d9",
+  axis: "#c3c2b7",
   muted: "#898781",
-  ink: "#ffffff",
-  inkSecondary: "#c3c2b7",
-  series1: "#3987e5",
-  series2: "#d95926",
-  series3: "#199e70",
+  ink: "#0b0b0b",
+  inkSecondary: "#52514e",
+  series1: "#2a78d6",
+  series2: "#eb6834",
+  series3: "#1baf7a",
   critical: "#d03b3b",
   good: "#0ca30c",
 } as const;

@@ -13,6 +13,9 @@ export interface Placed {
 
 interface Box { x0: number; y0: number; x1: number; y1: number }
 
+/** On-screen label size in px, independent of zoom. */
+export const LABEL_PX = 13.5;
+
 const overlaps = (a: Box, b: Box): boolean =>
   a.x0 < b.x1 && b.x0 < a.x1 && a.y0 < b.y1 && b.y0 < a.y1;
 
@@ -38,8 +41,9 @@ export interface PlacementInput {
  * rather than let it sit on top of one that matters more.
  */
 export function placeLabels({ stations, positions, k, rank }: PlacementInput): Placed[] {
-  // Constant on-screen size: the map scales, the type does not.
-  const fontSize = 11 / k;
+  // Constant on-screen size: the map scales, the type does not. Sized larger
+  // than the surrounding UI because the map is the thing being read.
+  const fontSize = LABEL_PX / k;
   const halfHeight = fontSize * 0.62;
   const dotRadius = 4.5 / Math.pow(k, 0.75);   // must track MetroMap's dot radius
   // Derive the gap from the dot, never independently: if the dot ever grows
