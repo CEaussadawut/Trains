@@ -5,11 +5,14 @@ import heapq
 import itertools
 import logging
 import math
+import threading
 import time
 import tracemalloc
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterator
+from typing import Callable, Iterator
+
+import landmarks
 
 logger = logging.getLogger(__name__)
 
@@ -300,6 +303,14 @@ class MetroGraph:
         self.adjacency: dict[Node, list[tuple[Node, float, str]]] = {}
         self.active_lines: set[str] = set()
 
+        # ALT landmark tables, one per (weighting, landmark count). The table
+        # *is* the metric -- its distances are exact shortest paths under one
+        # Weights -- so a new weighting needs a new table. Guarded by a lock
+        # because the server shares one graph across request threads and this
+        # is the only mutable state on an otherwise read-only object.
+        self._landmark_tables: dict[tuple[Weights, int], landmarks.LandmarkTable] = {}
+        self._landmark_lock = threading.Lock()
+
         self._load_lines()
         self._load_fares()
         self._load_stations()
@@ -392,6 +403,82 @@ class MetroGraph:
         origin = self.stations[node[0]]
         goal = self.stations[goal_id]
         return haversine_m(origin.lat, origin.lon, goal.lat, goal.lon) / V_MAX_MPS
+
+    def edge_weight_fn(self, weights: Weights) -> Callable[[Node, Node, float, str], float]:
+        """The weighted cost of one arc, as a plain function of the arc.
+
+        Hands `landmarks` the exact metric the search minimises without telling
+        it anything about trains, so its Dijkstras and the search agree by
+        construction rather than by two places being kept in step.
+        """
+        return lambda node, neighbor, cost_sec, kind: _edge_weight(
+            self, node, neighbor, cost_sec, kind, weights
+        )
+
+    def landmark_table(self, weights: Weights = Weights(),
+                       count: int = landmarks.DEFAULT_LANDMARKS) -> landmarks.LandmarkTable:
+        """Landmark distances for this weighting, computed once and cached.
+
+        Preprocessing is 2k Dijkstras over the node graph -- tens of
+        milliseconds here, and amortised over every later query at the same
+        weights. Benchmarks must say which side of that line they are
+        measuring; `bench_informed` warms the table before timing, and
+        `landmark_preprocess_seconds` reports the build cost on its own.
+        """
+        key = (weights, count)
+        table = self._landmark_tables.get(key)
+        if table is None:
+            with self._landmark_lock:
+                table = self._landmark_tables.get(key)
+                if table is None:
+                    table = landmarks.build_table(
+                        self.adjacency, self.edge_weight_fn(weights), count
+                    )
+                    self._landmark_tables[key] = table
+                    logger.info(
+                        "built %d landmarks for %s (%s): %s",
+                        len(table), self.scenario,
+                        "symmetric" if table.symmetric else "directed",
+                        ", ".join(f"{sid}/{line}" for sid, line in table.landmarks),
+                    )
+        return table
+
+    def landmark_heuristic(self, goal_id: str, weights: Weights = Weights(),
+                           count: int = landmarks.DEFAULT_LANDMARKS,
+                           geographic: bool = True) -> Callable[[Node], float]:
+        """h(n) for one goal station: the ALT bound, raised by the geographic one.
+
+        Both bounds are admissible and consistent, so their maximum is too --
+        and it is never worse than either alone, which is why `astar_landmark`
+        takes the max rather than replacing one with the other. ALT dominates
+        almost everywhere; the geographic term still wins near the goal, where
+        every landmark is far away and its triangle inequality goes slack.
+
+        Returns a closure so the per-goal constants are folded in once instead
+        of once per expansion.
+        """
+        bound = landmarks.GoalBound.build(
+            self.landmark_table(weights, count), self.start_nodes(goal_id)
+        )
+        if not geographic:
+            return bound
+        scale = weights.time
+        if scale <= 0.0:
+            return bound
+
+        def combined(node: Node) -> float:
+            return max(bound(node), scale * self.heuristic(node, goal_id))
+
+        return combined
+
+    def landmark_preprocess_seconds(self, weights: Weights = Weights(),
+                                    count: int = landmarks.DEFAULT_LANDMARKS) -> float:
+        """Wall time to build this weighting's table from cold. For the report:
+        ALT's expansion savings are only free once this has been paid."""
+        self._landmark_tables.pop((weights, count), None)
+        started = time.perf_counter()
+        self.landmark_table(weights, count)
+        return time.perf_counter() - started
 
     @property
     def num_nodes(self) -> int:
@@ -511,8 +598,17 @@ def _search(
     weights: Weights = Weights(),
     trace_memory: bool = True,
     tracer: Tracer | None = None,
+    heuristic: Callable[[Node], float] | None = None,
 ) -> Route:
     _require_active(graph, start_id, goal_id)
+
+    # Default: the geographic bound, scaled into the weighted metric the search
+    # minimises. `astar_landmark` passes the ALT bound instead. Everything below
+    # is the same algorithm either way -- which is the point of the comparison:
+    # only h changes, so any difference in expansions is the heuristic's doing.
+    if heuristic is None:
+        def heuristic(node: Node) -> float:
+            return weights.time * graph.heuristic(node, goal_id)
 
     counter = itertools.count()
     open_heap: list[tuple[float, int, Node]] = []
@@ -529,7 +625,7 @@ def _search(
             g_score[node] = 0.0
             time_score[node] = 0.0
             meter.generated += 1
-            start_h = weights.time * graph.heuristic(node, goal_id)
+            start_h = heuristic(node)
             heapq.heappush(open_heap, (start_h, next(counter), node))
             seeds.append((node, start_h))
         if tracer is not None:
@@ -543,7 +639,7 @@ def _search(
             meter.expanded += 1
 
             if tracer is not None:
-                here_h = weights.time * graph.heuristic(node, goal_id)
+                here_h = heuristic(node)
                 tracer.expand(
                     node,
                     g_score[node],
@@ -578,7 +674,7 @@ def _search(
                 g_score[neighbor] = tentative_g
                 time_score[neighbor] = time_score[node] + cost
                 came_from[neighbor] = node
-                h = weights.time * graph.heuristic(neighbor, goal_id)
+                h = heuristic(neighbor)
                 heapq.heappush(open_heap, (tentative_g + h if use_g_score else h, next(counter), neighbor))
                 if tracer is not None:
                     tracer.generate(
@@ -618,6 +714,45 @@ def astar_search(
     return _search(
         graph, start_id, goal_id,
         use_g_score=True, weights=weights, trace_memory=trace_memory, tracer=tracer,
+    )
+
+
+def astar_landmark_search(
+    graph: MetroGraph,
+    start_id: str,
+    goal_id: str,
+    *,
+    weights: Weights = Weights(),
+    trace_memory: bool = True,
+    tracer: Tracer | None = None,
+    landmark_count: int = landmarks.DEFAULT_LANDMARKS,
+) -> Route:
+    """A* on the ALT landmark heuristic (Goldberg & Harrelson, 2005).
+
+    Identical to `astar_search` in every respect but h. Where plain A* bounds
+    the remaining trip by a straight line at 45 km/h, this bounds it by exact
+    shortest-path distances measured from a handful of landmarks at the ends of
+    the network, and takes the best of that and the geographic bound.
+
+    Still optimal: the landmark bound is admissible *and* consistent -- it is a
+    maximum of differences of exact shortest paths, each of which obeys the
+    triangle inequality -- so the first time the goal leaves the queue the route
+    is the cheapest one, exactly as for A*. `test_landmarks.py` asserts
+    consistency on every edge and agreement with the Dijkstra oracle.
+
+    The trade is preprocessing: 2k Dijkstras per weighting, cached on the graph.
+    See `MetroGraph.landmark_preprocess_seconds` for that cost measured on its
+    own, and the README for when it does and does not pay for itself.
+    """
+    # Validate before preprocessing. `_search` does this too, but the heuristic
+    # has to be built first to be passed in, and an inactive goal station has no
+    # platforms to bound against -- so without this the caller would get an
+    # obscure error from the landmark code instead of StationNotActiveError.
+    _require_active(graph, start_id, goal_id)
+    return _search(
+        graph, start_id, goal_id,
+        use_g_score=True, weights=weights, trace_memory=trace_memory, tracer=tracer,
+        heuristic=graph.landmark_heuristic(goal_id, weights, landmark_count),
     )
 
 
@@ -908,6 +1043,7 @@ def optimal_duration(graph: MetroGraph, start_id: str, goal_id: str) -> float:
 ALGORITHMS = {
     "greedy": greedy_best_first_search,
     "astar": astar_search,
+    "astar_landmark": astar_landmark_search,
     "hill_climbing": hill_climbing_search,
     "beam": beam_search,
     "ida_star": ida_star_search,
@@ -930,6 +1066,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--weight-cost", type=float, default=0.0, help="seconds per THB (default: 0.0)")
     parser.add_argument("--weight-transit", type=float, default=0.0, help="seconds per transfer (default: 0.0)")
     parser.add_argument("--beam-width", type=int, default=5, help="beam search only (default: 5)")
+    parser.add_argument(
+        "--landmarks", type=int, default=landmarks.DEFAULT_LANDMARKS,
+        help=f"astar_landmark only: how many landmarks (default: {landmarks.DEFAULT_LANDMARKS})",
+    )
     parser.add_argument("-v", "--verbose", action="store_true")
     args = parser.parse_args(argv)
 
@@ -941,6 +1081,8 @@ def main(argv: list[str] | None = None) -> int:
     kwargs = {"weights": weights}
     if args.algorithm == "beam":
         kwargs["beam_width"] = args.beam_width
+    if args.algorithm == "astar_landmark":
+        kwargs["landmark_count"] = args.landmarks
 
     try:
         route = search(graph, args.start, args.goal, **kwargs)

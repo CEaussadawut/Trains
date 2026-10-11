@@ -3,6 +3,8 @@ from __future__ import annotations
 import threading
 from typing import Any
 
+import landmarks
+
 from metro_router import (
     ALGORITHMS,
     SCENARIOS,
@@ -29,6 +31,7 @@ ALGORITHM_FAMILY = {
     "hill_climbing": "heuristic search",
     "beam": "heuristic search",
     "astar": "informed search",
+    "astar_landmark": "informed search",
     "ida_star": "informed search",
 }
 
@@ -37,6 +40,7 @@ ALGORITHM_LABEL = {
     "hill_climbing": "Hill climbing",
     "beam": "Beam search",
     "astar": "A*",
+    "astar_landmark": "A* + ALT landmarks",
     "ida_star": "IDA*",
 }
 
@@ -64,8 +68,13 @@ def get_graph(scenario: str) -> MetroGraph:
 
 
 def warm_up() -> None:
+    """Build every scenario, and the default-weighting landmark table with it.
+
+    Without this the first `astar_landmark` request would pay for 2k Dijkstras
+    and look slow for a reason that has nothing to do with the search.
+    """
     for scenario in SCENARIOS:
-        get_graph(scenario)
+        get_graph(scenario).landmark_table()
 
 
 def build_weights(raw: dict[str, Any] | None) -> Weights:
@@ -88,6 +97,7 @@ def run_search(
     *,
     weights: Weights,
     beam_width: int = 5,
+    landmark_count: int = landmarks.DEFAULT_LANDMARKS,
     tracer: Tracer | None = None,
     trace_memory: bool = True,
 ) -> tuple[Route | None, str]:
@@ -103,6 +113,8 @@ def run_search(
     kwargs: dict[str, Any] = {"weights": weights, "trace_memory": trace_memory, "tracer": tracer}
     if algorithm == "beam":
         kwargs["beam_width"] = beam_width
+    if algorithm == "astar_landmark":
+        kwargs["landmark_count"] = landmark_count
 
     with _ENGINE_LOCK:
         try:
