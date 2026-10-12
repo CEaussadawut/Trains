@@ -37,6 +37,7 @@ export interface VisualState {
   threshold: number | null;
   round: number | null;
   backtrackFrom: Node | null;
+  backtrackReason: string | null;
   stuckAt: Node | null;
   stuckReason: string | null;
   finalPath: Node[] | null;
@@ -65,6 +66,7 @@ function emptyState(): VisualState {
     threshold: null,
     round: null,
     backtrackFrom: null,
+    backtrackReason: null,
     stuckAt: null,
     stuckReason: null,
     finalPath: null,
@@ -141,6 +143,7 @@ function apply(state: VisualState, event: TraceEvent): void {
     }
     case "backtrack": {
       state.backtrackFrom = event.node;
+      state.backtrackReason = event.reason;
       break;
     }
     case "stuck": {

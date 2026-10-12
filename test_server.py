@@ -7,6 +7,7 @@ import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from http.server import ThreadingHTTPServer
 
+from metro_router import ALGORITHMS
 from server.api import Handler
 from server.engine import warm_up
 
@@ -70,6 +71,10 @@ class MetaTest(ApiTestCase):
         self.assertEqual(families["greedy"], "heuristic search")
         self.assertEqual(families["hill_climbing"], "heuristic search")
         self.assertEqual(families["beam"], "heuristic search")
+        for name in ("bfs", "ucs", "dfs", "dls", "ids", "bidirectional"):
+            self.assertEqual(families[name], "blind search", name)
+        params = {entry["id"]: entry["params"] for entry in body["algorithms"]}
+        self.assertEqual(params["dls"], ["depth_limit"])
 
 
 class NetworkTest(ApiTestCase):
@@ -308,14 +313,15 @@ class HeuristicTest(ApiTestCase):
 
 
 class CompareTest(ApiTestCase):
-    def test_all_five_algorithms_are_scored_against_dijkstra(self) -> None:
+    def test_every_algorithm_is_scored_against_dijkstra(self) -> None:
         status, body = self.post(
             "/api/compare", {"start": "N24", "goal": "BL01", "repeats": 2}
         )
         self.assertEqual(status, 200)
         results = {entry["algorithm"]: entry for entry in body["results"]}
-        self.assertEqual(len(results), 5)
+        self.assertEqual(set(results), set(ALGORITHMS))
         self.assertTrue(results["astar"]["optimal"])
+        self.assertTrue(results["ucs"]["optimal"])
         self.assertFalse(results["hill_climbing"]["solved"])
         self.assertIn("error", results["hill_climbing"])
         self.assertGreater(results["greedy"]["excess_pct"], 0.0)

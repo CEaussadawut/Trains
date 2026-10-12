@@ -96,7 +96,12 @@ export function NodeInspector({ visual }: { visual: VisualState | null }) {
       )}
       {visual.backtrackFrom && (
         <p className="panel-note warn-text">
-          Backtracked from {stations.get(visual.backtrackFrom[0])?.name_en} — f exceeded the threshold.
+          Backtracked from {stations.get(visual.backtrackFrom[0])?.name_en} —{" "}
+          {visual.backtrackReason === "depth_limit"
+            ? "depth limit reached."
+            : visual.backtrackReason === "exhausted"
+              ? "every branch below it is done."
+              : "f exceeded the threshold."}
         </p>
       )}
       {visual.stuckAt && (

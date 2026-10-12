@@ -36,6 +36,7 @@ export function Controls() {
   const goal = useStore((s) => s.goal);
   const weights = useStore((s) => s.weights);
   const beamWidth = useStore((s) => s.beamWidth);
+  const depthLimit = useStore((s) => s.depthLimit);
   const running = useStore((s) => s.running);
   const mode = useStore((s) => s.mode);
   const showHeuristic = useStore((s) => s.showHeuristic);
@@ -45,6 +46,7 @@ export function Controls() {
   const setAlgorithm = useStore((s) => s.setAlgorithm);
   const setWeights = useStore((s) => s.setWeights);
   const setBeamWidth = useStore((s) => s.setBeamWidth);
+  const setDepthLimit = useStore((s) => s.setDepthLimit);
   const setEndpoints = useStore((s) => s.setEndpoints);
   const run = useStore((s) => s.run);
   const runCompare = useStore((s) => s.runCompare);
@@ -96,6 +98,11 @@ export function Controls() {
       {algorithm === "beam" && mode === "animate" && (
         <WeightSlider name="Beam width" value={beamWidth} max={20} step={1}
           hint="How many partial paths survive each round." onChange={setBeamWidth} />
+      )}
+
+      {algorithm === "dls" && (
+        <WeightSlider name="Depth limit" value={depthLimit} max={60} step={1}
+          hint="Hops DLS may go before it gives up on a branch." onChange={setDepthLimit} />
       )}
 
       <div className="group">

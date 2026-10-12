@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any, Callable
 from urllib.parse import parse_qs, urlparse
 
-from metro_router import ALGORITHMS, SCENARIOS, Tracer
+from metro_router import ALGORITHM_PARAMS, ALGORITHMS, DEFAULT_DEPTH_LIMIT, SCENARIOS, Tracer
 
 from server import engine, serialize
 
@@ -32,7 +32,7 @@ def _meta(_query: dict, _body: dict) -> dict:
                 "id": name,
                 "label": engine.ALGORITHM_LABEL[name],
                 "family": engine.ALGORITHM_FAMILY[name],
-                "params": ["beam_width"] if name == "beam" else [],
+                "params": ALGORITHM_PARAMS.get(name, []),
             }
             for name in sorted(ALGORITHMS)
         ],
@@ -41,6 +41,7 @@ def _meta(_query: dict, _body: dict) -> dict:
             "algorithm": "astar",
             "weights": {"time": 1.0, "cost": 0.0, "transit": 0.0},
             "beam_width": 5,
+            "depth_limit": DEFAULT_DEPTH_LIMIT,
             "max_events": DEFAULT_MAX_EVENTS,
         },
     }
@@ -69,7 +70,7 @@ def _heuristic(query: dict, _body: dict) -> dict:
     }
 
 
-def _request_common(body: dict) -> tuple[Any, str, str, Any, int]:
+def _request_common(body: dict) -> tuple[Any, str, str, Any, int, int]:
     graph = engine.get_graph(str(body.get("scenario", "operating")))
     start_id = str(body.get("start", ""))
     goal_id = str(body.get("goal", ""))
@@ -81,14 +82,21 @@ def _request_common(body: dict) -> tuple[Any, str, str, Any, int]:
         raise engine.BadRequest("beam_width must be an integer") from exc
     if beam_width < 1:
         raise engine.BadRequest("beam_width must be >= 1")
-    return graph, start_id, goal_id, weights, beam_width
+    try:
+        depth_limit = int(body.get("depth_limit", DEFAULT_DEPTH_LIMIT))
+    except (TypeError, ValueError) as exc:
+        raise engine.BadRequest("depth_limit must be an integer") from exc
+    if depth_limit < 0:
+        raise engine.BadRequest("depth_limit must be >= 0")
+    return graph, start_id, goal_id, weights, beam_width, depth_limit
 
 
 def _search(_query: dict, body: dict) -> dict:
-    graph, start_id, goal_id, weights, beam_width = _request_common(body)
+    graph, start_id, goal_id, weights, beam_width, depth_limit = _request_common(body)
     algorithm = str(body.get("algorithm", "astar"))
     route, error = engine.run_search(
-        graph, algorithm, start_id, goal_id, weights=weights, beam_width=beam_width
+        graph, algorithm, start_id, goal_id,
+        weights=weights, beam_width=beam_width, depth_limit=depth_limit,
     )
     return {
         "scenario": graph.scenario,
@@ -103,14 +111,15 @@ def _search(_query: dict, body: dict) -> dict:
 
 
 def _trace(_query: dict, body: dict) -> dict:
-    graph, start_id, goal_id, weights, beam_width = _request_common(body)
+    graph, start_id, goal_id, weights, beam_width, depth_limit = _request_common(body)
     algorithm = str(body.get("algorithm", "astar"))
     options = body.get("trace") or {}
 
     # IDA* re-walks the tree once per threshold and can expand hundreds of
     # thousands of nodes. Keeping only the last phase's detail bounds the
     # payload while preserving the whole threshold ladder as summaries.
-    default_phases = "last" if algorithm == "ida_star" else "all"
+    # IDS re-runs a depth-limited DFS once per limit, so it gets the same treatment.
+    default_phases = "last" if algorithm in ("ida_star", "ids") else "all"
     try:
         tracer = Tracer(
             max_events=int(options.get("max_events", DEFAULT_MAX_EVENTS)),
@@ -122,7 +131,7 @@ def _trace(_query: dict, body: dict) -> dict:
 
     route, error = engine.run_search(
         graph, algorithm, start_id, goal_id,
-        weights=weights, beam_width=beam_width, tracer=tracer,
+        weights=weights, beam_width=beam_width, depth_limit=depth_limit, tracer=tracer,
     )
     payload = tracer.to_dict()
     payload.update({
@@ -139,14 +148,15 @@ def _trace(_query: dict, body: dict) -> dict:
 
 
 def _compare(_query: dict, body: dict) -> dict:
-    graph, start_id, goal_id, weights, beam_width = _request_common(body)
+    graph, start_id, goal_id, weights, beam_width, depth_limit = _request_common(body)
     try:
         repeats = int(body.get("repeats", 5))
     except (TypeError, ValueError) as exc:
         raise engine.BadRequest("repeats must be an integer") from exc
 
     measurements = engine.compare_all(
-        graph, start_id, goal_id, weights=weights, beam_width=beam_width, repeats=repeats
+        graph, start_id, goal_id,
+        weights=weights, beam_width=beam_width, depth_limit=depth_limit, repeats=repeats,
     )
     results = []
     for row in measurements:

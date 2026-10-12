@@ -7,13 +7,17 @@ import logging
 import math
 import time
 import tracemalloc
+from collections import deque
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterator
+from typing import Iterator, TypeVar
 
 logger = logging.getLogger(__name__)
 
 Node = tuple[str, str]
+_T = TypeVar("_T")
+# A node plus the rail hops of its open fare segment (see _fare_step).
+FareState = tuple[Node, int]
 
 DEFAULT_DATA_DIR = Path(__file__).resolve().parent / "datasets"
 
@@ -447,7 +451,7 @@ def _require_active(graph: MetroGraph, start_id: str, goal_id: str) -> None:
         raise StationNotActiveError(f"{goal_id!r} has no lines open under scenario {graph.scenario!r}")
 
 
-def _reconstruct(came_from: dict[Node, Node], node: Node) -> list[Node]:
+def _reconstruct(came_from: dict[_T, _T], node: _T) -> list[_T]:
     path = [node]
     while node in came_from:
         node = came_from[node]
@@ -500,6 +504,29 @@ def _edge_weight(graph: MetroGraph, node: Node, neighbor: Node, cost_sec: float,
         fare_component = 0.0 if from_operator == to_operator else graph.fares[to_operator]["base_fare"]
         transit_component = 1.0
     return weights.time * cost_sec + weights.cost * fare_component + weights.transit * transit_component
+
+
+def _segment_fare(fare: dict[str, float], hops: int) -> float:
+    if hops == 0:
+        return 0.0
+    return min(fare["base_fare"] + fare["per_station"] * hops, fare["max_fare"])
+
+
+def _fare_step(graph: MetroGraph, node: Node, neighbor: Node, kind: str, segment_hops: int) -> tuple[float, int]:
+    """Baht one edge adds to the trip, exactly as MetroGraph.fare_for charges it.
+
+    segment_hops counts the rail hops of the open same-operator segment (0 = none open).
+    The base fare lands on a segment's first hop and the max_fare cap is honoured, so
+    the sum of steps along any path equals fare_for(path). Once a segment hits its cap
+    the count stops growing, which keeps the (node, segment_hops) state space finite.
+    """
+    operator = graph.lines[neighbor[1]]["operator"]
+    if kind != "rail":
+        same_operator = graph.lines[node[1]]["operator"] == operator
+        return 0.0, segment_hops if same_operator else 0
+    fare = graph.fares[operator]
+    added = _segment_fare(fare, segment_hops + 1) - _segment_fare(fare, segment_hops)
+    return added, segment_hops + 1 if added > 0.0 else segment_hops
 
 
 def _search(
@@ -878,6 +905,480 @@ def ida_star_search(
     return _route(graph, solution[0], solution[1], meter)
 
 
+def breadth_first_search(
+    graph: MetroGraph,
+    start_id: str,
+    goal_id: str,
+    *,
+    weights: Weights = Weights(),
+    trace_memory: bool = True,
+    tracer: Tracer | None = None,
+) -> Route:
+    del weights
+    _require_active(graph, start_id, goal_id)
+
+    frontier: deque[Node] = deque()
+    came_from: dict[Node, Node] = {}
+    time_score: dict[Node, float] = {}
+    reached: set[Node] = set()
+    path: list[Node] | None = None
+    duration_sec = 0.0
+
+    with _Meter(trace_memory) as meter:
+        seeds: list[tuple[Node, float]] = []
+        for node in graph.start_nodes(start_id):
+            meter.generated += 1
+            frontier.append(node)
+            reached.add(node)
+            time_score[node] = 0.0
+            seeds.append((node, 0.0))
+        if tracer is not None:
+            tracer.seed(seeds)
+
+        # Early goal test (AIMA): a node is checked when it is generated, not when it
+        # is expanded. BFS is still hop-optimal, and the goal layer is never expanded.
+        goal = next((node for node in frontier if node[0] == goal_id), None)
+
+        while frontier and goal is None:
+            node = frontier.popleft()
+            meter.expanded += 1
+
+            if tracer is not None:
+                depth = len(_reconstruct(came_from, node)) - 1
+                tracer.expand(
+                    node, time_score[node], 0.0, float(depth),
+                    frontier=[(float(i), other, False) for i, other in enumerate(frontier)],
+                    depth=depth,
+                )
+
+            for neighbor, cost, kind in graph.neighbors(node):
+                meter.generated += 1
+                if neighbor in reached:
+                    if tracer is not None:
+                        tracer.generate(node, neighbor, cost, kind, "skip_seen")
+                    continue
+                reached.add(neighbor)
+                came_from[neighbor] = node
+                time_score[neighbor] = time_score[node] + cost
+                frontier.append(neighbor)
+                if tracer is not None:
+                    tracer.generate(node, neighbor, cost, kind, "improved", g=time_score[neighbor], h=0.0)
+                if neighbor[0] == goal_id:
+                    goal = neighbor
+                    break
+
+        if goal is not None:
+            path = _reconstruct(came_from, goal)
+            duration_sec = time_score[goal]
+            if tracer is not None:
+                tracer.solution(path, duration_sec)
+
+    if path is None:
+        raise NoRouteFoundError(f"no route from {start_id!r} to {goal_id!r} in scenario {graph.scenario!r}")
+    return _route(graph, path, duration_sec, meter)
+
+
+def depth_first_search(
+    graph: MetroGraph,
+    start_id: str,
+    goal_id: str,
+    *,
+    weights: Weights = Weights(),
+    trace_memory: bool = True,
+    tracer: Tracer | None = None,
+) -> Route:
+    del weights
+    _require_active(graph, start_id, goal_id)
+
+    stack: list[tuple[Node, Node | None, float]] = []
+    came_from: dict[Node, Node] = {}
+    expanded: set[Node] = set()
+    path: list[Node] | None = None
+    duration_sec = 0.0
+
+    with _Meter(trace_memory) as meter:
+        starts = graph.start_nodes(start_id)
+        for node in reversed(starts):
+            meter.generated += 1
+            stack.append((node, None, 0.0))
+        if tracer is not None:
+            tracer.seed([(node, 0.0) for node in starts])
+
+        while stack:
+            node, parent, time_g = stack.pop()
+            if node in expanded:
+                continue  
+            expanded.add(node)
+            if parent is not None:
+                came_from[node] = parent
+            meter.expanded += 1
+
+            if tracer is not None:
+                depth = len(_reconstruct(came_from, node)) - 1
+                tracer.expand(
+                    node, time_g, 0.0, float(depth),
+                    frontier=[
+                        (float(i), other, other in expanded)
+                        for i, (other, _p, _t) in enumerate(reversed(stack))
+                    ],
+                    depth=depth,
+                )
+
+            if node[0] == goal_id:
+                path = _reconstruct(came_from, node)
+                duration_sec = time_g
+                if tracer is not None:
+                    tracer.solution(path, duration_sec)
+                break
+
+            for neighbor, cost, kind in reversed(graph.neighbors(node)):
+                meter.generated += 1
+                if neighbor in expanded:
+                    if tracer is not None:
+                        tracer.generate(node, neighbor, cost, kind, "skip_visited")
+                    continue
+                stack.append((neighbor, node, time_g + cost))
+                if tracer is not None:
+                    tracer.generate(node, neighbor, cost, kind, "improved", g=time_g + cost, h=0.0)
+
+    if path is None:
+        raise NoRouteFoundError(f"no route from {start_id!r} to {goal_id!r} in scenario {graph.scenario!r}")
+    return _route(graph, path, duration_sec, meter)
+
+
+def uniform_cost_search(
+    graph: MetroGraph,
+    start_id: str,
+    goal_id: str,
+    *,
+    weights: Weights = Weights(),
+    trace_memory: bool = True,
+    tracer: Tracer | None = None,
+) -> Route:
+
+    _require_active(graph, start_id, goal_id)
+
+    # Fares are not additive per edge (base fare per segment, max_fare cap), so when
+    # cost carries weight the search state also tracks the open fare segment. With
+    # cost weighted at zero the extra component stays 0 and this is plain Dijkstra.
+    track_fare = weights.cost > 0.0
+
+    counter = itertools.count()
+    open_heap: list[tuple[float, int, FareState]] = []
+    came_from: dict[FareState, FareState] = {}
+    g_score: dict[FareState, float] = {}
+    time_score: dict[FareState, float] = {}
+    visited: set[FareState] = set()
+    path: list[Node] | None = None
+    duration_sec = 0.0
+
+    with _Meter(trace_memory) as meter:
+        seeds: list[tuple[Node, float]] = []
+        for node in graph.start_nodes(start_id):
+            state = (node, 0)
+            g_score[state] = 0.0
+            time_score[state] = 0.0
+            meter.generated += 1
+            heapq.heappush(open_heap, (0.0, next(counter), state))
+            seeds.append((node, 0.0))
+        if tracer is not None:
+            tracer.seed(seeds)
+
+        while open_heap:
+            _, _, state = heapq.heappop(open_heap)
+            if state in visited:
+                continue
+            visited.add(state)
+            meter.expanded += 1
+            node, segment_hops = state
+
+            if tracer is not None:
+                tracer.expand(
+                    node, g_score[state], 0.0, g_score[state],
+                    frontier=[(priority, other[0], other in visited) for priority, _c, other in open_heap],
+                )
+
+            if node[0] == goal_id:
+                path = [node for node, _hops in _reconstruct(came_from, state)]
+                duration_sec = time_score[state]
+                if tracer is not None:
+                    tracer.solution(path, duration_sec)
+                break
+
+            for neighbor, cost, kind in graph.neighbors(node):
+                meter.generated += 1
+                fare_added, next_hops = _fare_step(graph, node, neighbor, kind, segment_hops) if track_fare else (0.0, 0)
+                next_state = (neighbor, next_hops)
+                if next_state in visited:
+                    if tracer is not None:
+                        tracer.generate(node, neighbor, cost, kind, "skip_visited")
+                    continue
+                step = weights.time * cost + weights.cost * fare_added + weights.transit * (kind != "rail")
+                tentative_g = g_score[state] + step
+                if tentative_g >= g_score.get(next_state, math.inf):
+                    if tracer is not None:
+                        tracer.generate(node, neighbor, cost, kind, "skip_worse", g=tentative_g)
+                    continue
+                g_score[next_state] = tentative_g
+                time_score[next_state] = time_score[state] + cost
+                came_from[next_state] = state
+                heapq.heappush(open_heap, (tentative_g, next(counter), next_state))
+                if tracer is not None:
+                    tracer.generate(node, neighbor, cost, kind, "improved", g=tentative_g, h=0.0, f=tentative_g)
+
+    if path is None:
+        raise NoRouteFoundError(f"no route from {start_id!r} to {goal_id!r} in scenario {graph.scenario!r}")
+    return _route(graph, path, duration_sec, meter)
+
+
+DEFAULT_DEPTH_LIMIT = 30
+
+
+def _depth_limited(
+    graph: MetroGraph,
+    starts: list[Node],
+    goal_id: str,
+    limit: int,
+    meter: _Meter,
+    tracer: Tracer | None,
+) -> tuple[list[Node] | None, float, bool]:
+
+    shallowest: dict[Node, int] = {}
+    cutoff = False
+
+    def dls(path: list[Node], depth: int, time_g: float) -> tuple[list[Node] | None, float]:
+        nonlocal cutoff
+        node = path[-1]
+        shallowest[node] = depth
+        meter.expanded += 1
+        if tracer is not None:
+            tracer.expand(node, time_g, 0.0, float(depth), frontier=[], depth=depth)
+
+        if node[0] == goal_id:
+            if tracer is not None:
+                tracer.solution(path, time_g)
+            return list(path), time_g
+
+        if depth == limit:
+            cutoff = True
+            if tracer is not None:
+                tracer.backtrack(node, "depth_limit", float(depth), float(limit))
+            return None, 0.0
+
+        for neighbor, cost, kind in graph.neighbors(node):
+            meter.generated += 1
+            if shallowest.get(neighbor, limit + 1) <= depth + 1:
+                if tracer is not None:
+                    tracer.generate(node, neighbor, cost, kind, "skip_seen")
+                continue
+            if tracer is not None:
+                tracer.generate(node, neighbor, cost, kind, "improved", g=time_g + cost, h=0.0)
+            path.append(neighbor)
+            found, seconds = dls(path, depth + 1, time_g + cost)
+            path.pop()
+            if found is not None:
+                return found, seconds
+
+        if tracer is not None:
+            tracer.backtrack(node, "exhausted", float(depth), float(limit))
+        return None, 0.0
+
+    for root in starts:
+        if shallowest.get(root, limit + 1) <= 0:
+            continue
+        found, seconds = dls([root], 0, 0.0)
+        if found is not None:
+            return found, seconds, cutoff
+    return None, 0.0, cutoff
+
+
+def depth_limited_search(
+    graph: MetroGraph,
+    start_id: str,
+    goal_id: str,
+    *,
+    weights: Weights = Weights(),
+    depth_limit: int = DEFAULT_DEPTH_LIMIT,
+    trace_memory: bool = True,
+    tracer: Tracer | None = None,
+) -> Route:
+
+    del weights
+    if depth_limit < 0:
+        raise ValueError("depth_limit must be >= 0")
+    _require_active(graph, start_id, goal_id)
+
+    starts = graph.start_nodes(start_id)
+    with _Meter(trace_memory) as meter:
+        meter.generated += len(starts)
+        if tracer is not None:
+            tracer.seed([(node, 0.0) for node in starts])
+            tracer.phase("depth_limit", round=0, limit=depth_limit)
+        path, duration_sec, cutoff = _depth_limited(graph, starts, goal_id, depth_limit, meter, tracer)
+
+    if path is None:
+        if cutoff:
+            raise NoRouteFoundError(
+                f"no route within {depth_limit} hops from {start_id!r} to {goal_id!r} (depth limit reached)"
+            )
+        raise NoRouteFoundError(f"no route from {start_id!r} to {goal_id!r} in scenario {graph.scenario!r}")
+    return _route(graph, path, duration_sec, meter)
+
+
+def iterative_deepening_search(
+    graph: MetroGraph,
+    start_id: str,
+    goal_id: str,
+    *,
+    weights: Weights = Weights(),
+    trace_memory: bool = True,
+    tracer: Tracer | None = None,
+) -> Route:
+
+    del weights
+    _require_active(graph, start_id, goal_id)
+
+    starts = graph.start_nodes(start_id)
+    path: list[Node] | None = None
+    duration_sec = 0.0
+
+    with _Meter(trace_memory) as meter:
+        meter.generated += len(starts)
+        if tracer is not None:
+            tracer.seed([(node, 0.0) for node in starts])
+
+        for limit in range(graph.num_nodes + 1):
+            if tracer is not None:
+                tracer.phase("depth_limit", round=limit, limit=limit)
+            path, duration_sec, cutoff = _depth_limited(graph, starts, goal_id, limit, meter, tracer)
+            if path is not None:
+                if tracer is not None:
+                    tracer.update_phase(solved=True)
+                break
+            if not cutoff:
+                if tracer is not None:
+                    tracer.update_phase(exhausted=True)
+                break
+
+    if path is None:
+        raise NoRouteFoundError(f"no route from {start_id!r} to {goal_id!r} in scenario {graph.scenario!r}")
+    return _route(graph, path, duration_sec, meter)
+
+
+def bidirectional_search(
+    graph: MetroGraph,
+    start_id: str,
+    goal_id: str,
+    *,
+    weights: Weights = Weights(),
+    trace_memory: bool = True,
+    tracer: Tracer | None = None,
+) -> Route:
+
+    del weights
+    _require_active(graph, start_id, goal_id)
+
+    starts = graph.start_nodes(start_id)
+    goals = graph.start_nodes(goal_id)
+    fwd_parent: dict[Node, Node | None] = {node: None for node in starts}
+    bwd_parent: dict[Node, Node | None] = {node: None for node in goals}
+    fwd_time: dict[Node, float] = {node: 0.0 for node in starts}
+    bwd_time: dict[Node, float] = {node: 0.0 for node in goals}
+    fwd_depth: dict[Node, int] = {node: 0 for node in starts}
+    bwd_depth: dict[Node, int] = {node: 0 for node in goals}
+    fwd_frontier: list[Node] = list(starts)
+    bwd_frontier: list[Node] = list(goals)
+    path: list[Node] = []
+    duration_sec = 0.0
+    meet: Node | None = None
+
+    def chain(parents: dict[Node, Node | None], node: Node) -> list[Node]:
+        out = [node]
+        parent = parents[node]
+        while parent is not None:
+            out.append(parent)
+            parent = parents[parent]
+        return out
+
+    with _Meter(trace_memory) as meter:
+        meter.generated += len(starts) + len(goals)
+        if tracer is not None:
+            tracer.seed([(node, 0.0) for node in starts] + [(node, 0.0) for node in goals])
+
+        common = [node for node in starts if node in bwd_parent]
+        if common:
+            meet = common[0]
+
+        round_index = 0
+        while meet is None and fwd_frontier and bwd_frontier:
+            forward = len(fwd_frontier) <= len(bwd_frontier)
+            if forward:
+                frontier, parent, times, depths = fwd_frontier, fwd_parent, fwd_time, fwd_depth
+                other_parent, other_depth = bwd_parent, bwd_depth
+            else:
+                frontier, parent, times, depths = bwd_frontier, bwd_parent, bwd_time, bwd_depth
+                other_parent, other_depth = fwd_parent, fwd_depth
+            if tracer is not None:
+                tracer.phase(
+                    "forward" if forward else "backward",
+                    round=round_index, frontier_forward=len(fwd_frontier), frontier_backward=len(bwd_frontier),
+                )
+
+            next_layer: list[Node] = []
+            meetings: list[tuple[int, Node]] = []
+            for position, node in enumerate(frontier):
+                meter.expanded += 1
+                if tracer is not None:
+                    tracer.expand(
+                        node, times[node], 0.0, float(depths[node]),
+                        frontier=[(float(i), other, False) for i, other in enumerate(frontier[position + 1:])],
+                        depth=depths[node],
+                    )
+                for neighbor, cost, kind in graph.neighbors(node):
+                    meter.generated += 1
+                    if neighbor in parent:
+                        if tracer is not None:
+                            tracer.generate(node, neighbor, cost, kind, "skip_seen")
+                        continue
+                    parent[neighbor] = node
+                    times[neighbor] = times[node] + cost
+                    depths[neighbor] = depths[node] + 1
+                    next_layer.append(neighbor)
+                    if tracer is not None:
+                        tracer.generate(node, neighbor, cost, kind, "improved", g=times[neighbor], h=0.0)
+                    if neighbor in other_parent:
+                        meetings.append((depths[neighbor] + other_depth[neighbor], neighbor))
+
+            if forward:
+                fwd_frontier = next_layer
+            else:
+                bwd_frontier = next_layer
+            if meetings:
+                meet = min(meetings, key=lambda item: item[0])[1]
+            round_index += 1
+
+        if meet is not None:
+            path = list(reversed(chain(fwd_parent, meet))) + chain(bwd_parent, meet)[1:]
+            duration_sec = fwd_time[meet] + bwd_time[meet]
+            if tracer is not None:
+                tracer.solution(path, duration_sec)
+
+    if meet is None:
+        raise NoRouteFoundError(f"no route from {start_id!r} to {goal_id!r} in scenario {graph.scenario!r}")
+    return _route(graph, path, duration_sec, meter)
+
+
+def search_kwargs(algorithm: str, *, beam_width: int = 5, depth_limit: int = DEFAULT_DEPTH_LIMIT) -> dict:
+    if algorithm == "beam":
+        return {"beam_width": beam_width}
+    if algorithm == "dls":
+        return {"depth_limit": depth_limit}
+    return {}
+
+
+ALGORITHM_PARAMS = {"beam": ["beam_width"], "dls": ["depth_limit"]}
+
+
 def optimal_duration(graph: MetroGraph, start_id: str, goal_id: str) -> float:
     _require_active(graph, start_id, goal_id)
 
@@ -906,6 +1407,12 @@ def optimal_duration(graph: MetroGraph, start_id: str, goal_id: str) -> float:
 
 
 ALGORITHMS = {
+    "bfs": breadth_first_search,
+    "dfs": depth_first_search,
+    "ucs": uniform_cost_search,
+    "dls": depth_limited_search,
+    "ids": iterative_deepening_search,
+    "bidirectional": bidirectional_search,
     "greedy": greedy_best_first_search,
     "astar": astar_search,
     "hill_climbing": hill_climbing_search,
@@ -930,6 +1437,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--weight-cost", type=float, default=0.0, help="seconds per THB (default: 0.0)")
     parser.add_argument("--weight-transit", type=float, default=0.0, help="seconds per transfer (default: 0.0)")
     parser.add_argument("--beam-width", type=int, default=5, help="beam search only (default: 5)")
+    parser.add_argument(
+        "--depth-limit", type=int, default=DEFAULT_DEPTH_LIMIT,
+        help=f"depth-limited search only, in hops (default: {DEFAULT_DEPTH_LIMIT})",
+    )
     parser.add_argument("-v", "--verbose", action="store_true")
     args = parser.parse_args(argv)
 
@@ -938,9 +1449,10 @@ def main(argv: list[str] | None = None) -> int:
     graph = MetroGraph(scenario=args.scenario, data_dir=args.data_dir)
     search = ALGORITHMS[args.algorithm]
     weights = Weights(time=args.weight_time, cost=args.weight_cost, transit=args.weight_transit)
-    kwargs = {"weights": weights}
-    if args.algorithm == "beam":
-        kwargs["beam_width"] = args.beam_width
+    kwargs = {
+        "weights": weights,
+        **search_kwargs(args.algorithm, beam_width=args.beam_width, depth_limit=args.depth_limit),
+    }
 
     try:
         route = search(graph, args.start, args.goal, **kwargs)

@@ -5,6 +5,7 @@ from typing import Any
 
 from metro_router import (
     ALGORITHMS,
+    DEFAULT_DEPTH_LIMIT,
     SCENARIOS,
     MetroGraph,
     NoRouteFoundError,
@@ -13,6 +14,7 @@ from metro_router import (
     Tracer,
     Weights,
     optimal_duration,
+    search_kwargs,
 )
 
 # `_Meter` drives process-global tracemalloc, so two searches running at once
@@ -25,6 +27,12 @@ _GRAPHS: dict[str, MetroGraph] = {}
 _GRAPH_LOCK = threading.Lock()
 
 ALGORITHM_FAMILY = {
+    "bfs": "blind search",
+    "dfs": "blind search",
+    "ucs": "blind search",
+    "dls": "blind search",
+    "ids": "blind search",
+    "bidirectional": "blind search",
     "greedy": "heuristic search",
     "hill_climbing": "heuristic search",
     "beam": "heuristic search",
@@ -33,6 +41,12 @@ ALGORITHM_FAMILY = {
 }
 
 ALGORITHM_LABEL = {
+    "bfs": "Breadth-first (BFS)",
+    "dfs": "Depth-first (DFS)",
+    "ucs": "Uniform-cost (UCS)",
+    "dls": "Depth-limited (DLS)",
+    "ids": "Iterative deepening (IDS)",
+    "bidirectional": "Bidirectional",
     "greedy": "Greedy best-first",
     "hill_climbing": "Hill climbing",
     "beam": "Beam search",
@@ -88,6 +102,7 @@ def run_search(
     *,
     weights: Weights,
     beam_width: int = 5,
+    depth_limit: int = DEFAULT_DEPTH_LIMIT,
     tracer: Tracer | None = None,
     trace_memory: bool = True,
 ) -> tuple[Route | None, str]:
@@ -100,9 +115,10 @@ def run_search(
     if algorithm not in ALGORITHMS:
         raise BadRequest(f"unknown algorithm {algorithm!r}, expected one of {sorted(ALGORITHMS)}")
     search = ALGORITHMS[algorithm]
-    kwargs: dict[str, Any] = {"weights": weights, "trace_memory": trace_memory, "tracer": tracer}
-    if algorithm == "beam":
-        kwargs["beam_width"] = beam_width
+    kwargs: dict[str, Any] = {
+        "weights": weights, "trace_memory": trace_memory, "tracer": tracer,
+        **search_kwargs(algorithm, beam_width=beam_width, depth_limit=depth_limit),
+    }
 
     with _ENGINE_LOCK:
         try:
@@ -145,6 +161,7 @@ def compare_all(
     *,
     weights: Weights,
     beam_width: int = 5,
+    depth_limit: int = DEFAULT_DEPTH_LIMIT,
     repeats: int = 5,
 ) -> list[Any]:
     """Benchmark every algorithm on one pair.
@@ -162,7 +179,7 @@ def compare_all(
     results = []
     with _ENGINE_LOCK:
         for algorithm in sorted(ALGORITHMS):
-            kwargs = {"beam_width": beam_width} if algorithm == "beam" else {}
+            kwargs = search_kwargs(algorithm, beam_width=beam_width, depth_limit=depth_limit)
             results.append(measure(graph, algorithm, start_id, goal_id, weights, repeats, **kwargs))
     return results
 
