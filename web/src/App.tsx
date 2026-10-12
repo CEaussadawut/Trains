@@ -33,6 +33,7 @@ function Legend() {
           <span><i className="key-ring ring-expanded" /> already expanded</span>
           <span><i className="key-ring ring-pruned" /> pruned</span>
           <span><i className="key-ring ring-stuck" /> stuck</span>
+          <span><i className="key-landmark" /> ALT landmark (A* + ALT only; solid = supplying h now)</span>
         </div>
         <div className="legend-group">
           <h4>Lines</h4>

@@ -42,8 +42,14 @@ export const api = {
 
   network: (scenario: Scenario) => request<Network>(`/api/network?scenario=${scenario}`),
 
-  heuristic: (scenario: Scenario, goal: string) =>
-    request<HeuristicPayload>(`/api/heuristic?scenario=${scenario}&goal=${encodeURIComponent(goal)}`),
+  /** h(n) as `algorithm` computes it under `weights` -- the landmark bound for
+   *  A* + ALT, the straight-line bound otherwise. */
+  heuristic: (scenario: Scenario, goal: string, algorithm: string, weights: Weights) =>
+    request<HeuristicPayload>(
+      `/api/heuristic?scenario=${scenario}&goal=${encodeURIComponent(goal)}` +
+      `&algorithm=${encodeURIComponent(algorithm)}` +
+      `&w_time=${weights.time}&w_cost=${weights.cost}&w_transit=${weights.transit}`,
+    ),
 
   trace: (body: SearchRequest & { trace?: { max_events?: number; detail?: string } }) =>
     request<TracePayload>("/api/trace", { method: "POST", body: JSON.stringify(body) }),

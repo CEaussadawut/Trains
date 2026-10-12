@@ -3,6 +3,8 @@ from __future__ import annotations
 import threading
 from typing import Any
 
+import landmarks
+
 from metro_router import (
     ALGORITHMS,
     DEFAULT_DEPTH_LIMIT,
@@ -159,10 +161,63 @@ def heuristic_by_station(graph: MetroGraph, goal_id: str) -> dict[str, float]:
     return values
 
 
+# Which heuristic each algorithm actually evaluates. Blind searches use none;
+# the map shading still shows the straight-line one for them, as the reference
+# every informed search starts from.
+LANDMARK_ALGORITHMS = frozenset({"astar_landmark"})
+
+
+def heuristic_view(graph: MetroGraph, goal_id: str, algorithm: str = "astar",
+                   weights: Weights = Weights()) -> dict[str, Any]:
+    """h(n) towards one goal, as the chosen algorithm really computes it.
+
+    Returned per station (for the map halo) and, for ALT, per node with the
+    landmark arithmetic behind each value (for the inspector). Values are in the
+    same weighted units as the trace's g/h/f, so the two agree number for number.
+
+    Per station the halo uses the *smallest* h over the station's platforms:
+    the ALT bound depends on the line you are standing on, and the minimum is
+    still a valid lower bound for "somewhere at this station".
+    """
+    if algorithm not in ALGORITHMS:
+        raise BadRequest(f"unknown algorithm {algorithm!r}, expected one of {sorted(ALGORITHMS)}")
+    scale = weights.time
+
+    if algorithm not in LANDMARK_ALGORITHMS:
+        values = {sid: scale * h for sid, h in heuristic_by_station(graph, goal_id).items()}
+        return {"kind": "straight_line", "algorithm": algorithm,
+                "max_h": max(values.values()) if values else 0.0, "h": values}
+
+    table = graph.landmark_table(weights)   # cached per weighting; has its own lock
+    bound = landmarks.GoalBound.build(table, graph.start_nodes(goal_id))
+    per_station: dict[str, float] = {}
+    explain: dict[str, dict[str, Any]] = {}
+    for node in graph.adjacency:
+        station_id, line_id = node
+        straight = scale * graph.heuristic(node, goal_id)
+        detail = bound.explain(node)
+        h = max(detail["bound"] if detail else 0.0, straight)
+        entry: dict[str, Any] = {"h": h, "straight_line": straight}
+        if detail and detail["bound"] >= straight and detail["bound"] > 0.0:
+            entry.update(source="landmark", landmark=list(detail["landmark"]), via=detail["via"],
+                         first=detail["first"], second=detail["second"])
+        else:
+            entry["source"] = "straight_line" if straight > 0.0 else "goal"
+        explain[f"{station_id}|{line_id}"] = entry
+        per_station[station_id] = min(h, per_station.get(station_id, h))
+    return {
+        "kind": "landmark", "algorithm": algorithm,
+        "max_h": max(per_station.values()) if per_station else 0.0,
+        "h": per_station,
+        "landmarks": [list(node) for node in table.landmarks],
+        "explain": explain,
+    }
+
+
 __all__ = [
     "ALGORITHM_FAMILY", "ALGORITHM_LABEL", "BadRequest", "NoRouteFoundError",
     "StationNotActiveError", "Tracer", "build_weights", "get_graph",
-    "heuristic_by_station", "reference_duration", "run_search", "warm_up",
+    "heuristic_by_station", "heuristic_view", "reference_duration", "run_search", "warm_up",
 ]
 
 

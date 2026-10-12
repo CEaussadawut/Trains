@@ -292,6 +292,20 @@ diagram geometry) and the **geographic** one (`lat`/`lon`), morphing between
 them; both are fitted to one shared canvas so panning and zooming survive the
 toggle.
 
+**Seeing ALT work.** With *A\* + ALT landmarks* selected, the six landmarks
+appear on the map as **L** diamonds, and the one supplying h for the node being
+expanded is drawn solid. Under the g/h/f cards the inspector prints the
+arithmetic behind h, e.g. on Khu Khot → Tha Phra at Phahon Yothin 59:
+
+> h from landmark **Lak Song** — it lies beyond the goal:
+> here → Lak Song 78.0 − goal → Lak Song 17.6 = **60.4 min** · straight line would say 29.1
+
+f then stays at 76.7 min — the true trip time — for every station on the route,
+which is why ALT expands exactly the 31 stations of the route and nothing else
+(plain A\* expands 103). "Shade by h(n) to goal" and the h/h\* note always show
+the heuristic the *selected* algorithm actually uses: the landmark bound for ALT,
+the straight-line one otherwise, and no h/h\* at all for blind searches.
+
 **Compare** runs every algorithm on the same pair and scores them against
 Dijkstra: nodes expanded vs generated, runtime, and effort against route
 quality. Log scales throughout — greedy expands tens of nodes where IDA\*
@@ -346,7 +360,7 @@ datasets/             5 CSVs — see datasets/README.md
 |---|---|
 | `GET /api/meta` | algorithms grouped by family, scenarios, defaults |
 | `GET /api/network?scenario=` | all 302 stations and 289 edges, each flagged active |
-| `GET /api/heuristic?scenario=&goal=` | h(n) per station, for the map shading |
+| `GET /api/heuristic?scenario=&goal=&algorithm=&w_time=&w_cost=&w_transit=` | h(n) per station as `algorithm` computes it; for `astar_landmark` also the landmarks and, per node, which landmark gave h and from which two distances |
 | `POST /api/search` | one route |
 | `POST /api/trace` | one route plus its full replay |
 | `POST /api/compare` | every algorithm scored against Dijkstra |

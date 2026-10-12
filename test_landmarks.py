@@ -342,6 +342,27 @@ class GoalSetTest(unittest.TestCase):
         self.assertGreater(caught, 0, "the swapped-extremum bug would not be detected here")
 
 
+class ExplainTest(unittest.TestCase):
+    def test_explain_reproduces_the_bound_on_every_node(self) -> None:
+        """explain() is what the web inspector prints, so it must be the same
+        number as the heuristic -- on every node, both metrics, both branches."""
+        graph = GRAPHS["operating"]
+        seen_via = set()
+        for weights in (Weights(time=1.0), Weights(time=1.0, cost=30.0)):
+            for goal_id in ("BL01", "E23", "A1", "CEN"):
+                bound = GoalBound.build(graph.landmark_table(weights), graph.start_nodes(goal_id))
+                for node in graph.adjacency:
+                    detail = bound.explain(node)
+                    if detail is None:
+                        self.assertAlmostEqual(bound(node), 0.0, places=9)
+                        continue
+                    self.assertAlmostEqual(detail["bound"], bound(node), places=9)
+                    self.assertAlmostEqual(detail["first"] - detail["second"], detail["bound"], places=9)
+                    self.assertIn(detail["landmark"], graph.landmark_table(weights).landmarks)
+                    seen_via.add(detail["via"])
+        self.assertEqual(seen_via, {"beyond_goal", "behind_you"})
+
+
 # --------------------------------------------------------------------------- #
 # 6. preprocessing, caching, determinism
 # --------------------------------------------------------------------------- #

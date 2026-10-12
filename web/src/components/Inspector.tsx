@@ -67,16 +67,33 @@ export function NodeInspector({ visual }: { visual: VisualState | null }) {
   const stations = useStore((s) => s.stationsById);
   const trace = useStore((s) => s.trace);
   const heuristic = useStore((s) => s.heuristic);
+  const meta = useStore((s) => s.meta);
+  const storeWeights = useStore((s) => s.weights);
 
+  const family = meta?.algorithms.find((entry) => entry.id === trace?.algorithm)?.family;
+  const usesLandmarks = trace?.algorithm === "astar_landmark";
+
+  // h/h* at the start, from the run itself: the h the algorithm really used,
+  // not a separately fetched straight-line value. Blind searches use no h, and
+  // once fares or transfers are weighted h is no longer in seconds, so the
+  // ratio against optimal_sec (plain seconds) would be meaningless -- hidden.
   const informedness = useMemo(() => {
-    if (!trace?.optimal_sec || !heuristic) return null;
-    const h = heuristic.h[trace.start];
-    return h === undefined ? null : h / trace.optimal_sec;
-  }, [trace, heuristic]);
+    if (!trace?.optimal_sec || family === "blind search") return null;
+    const weights = trace.weights ?? storeWeights;
+    if (weights.cost !== 0 || weights.transit !== 0 || weights.time <= 0) return null;
+    const first = trace.events.find((event) => event.kind === "expand");
+    if (!first || first.kind !== "expand" || !(first.h > 0)) return null;
+    return first.h / (weights.time * trace.optimal_sec);
+  }, [trace, family, storeWeights]);
 
   if (!visual || !visual.current) return <p className="empty">Run a search to inspect a node.</p>;
 
   const [stationId, lineId] = visual.current;
+  const nameOf = (id: string) => stations.get(id)?.name_en ?? id;
+  // only trust the breakdown when it was fetched for this very run
+  const explain = usesLandmarks && heuristic?.kind === "landmark" && heuristic.algorithm === trace?.algorithm
+    ? heuristic.explain?.[`${stationId}|${lineId}`]
+    : undefined;
   return (
     <div className="panel-body">
       <h4 className="node-name">{stations.get(stationId)?.name_en ?? stationId}</h4>
@@ -87,6 +104,32 @@ export function NodeInspector({ visual }: { visual: VisualState | null }) {
         <div><dt>h</dt><dd>{mins(visual.currentH)}<small>min estimated</small></dd></div>
         <div><dt>f</dt><dd>{mins(visual.currentF)}<small>min total</small></dd></div>
       </dl>
+
+      {explain && (
+        <p className="panel-note alt-note">
+          {explain.source === "landmark" && explain.landmark ? (
+            <>
+              h from landmark <b>{nameOf(explain.landmark[0])}</b>
+              {explain.via === "beyond_goal" ? " — it lies beyond the goal:" : " — it lies behind you:"}
+              <br />
+              {explain.via === "beyond_goal" ? (
+                <>here → {nameOf(explain.landmark[0])} {mins(explain.first)}
+                  {" "}− goal → {nameOf(explain.landmark[0])} {mins(explain.second)}</>
+              ) : (
+                <>{nameOf(explain.landmark[0])} → goal {mins(explain.first)}
+                  {" "}− {nameOf(explain.landmark[0])} → here {mins(explain.second)}</>
+              )}
+              {" "}= <b>{mins(explain.h)} min</b>
+              <span className="dim"> · straight line would say {mins(explain.straight_line)}</span>
+            </>
+          ) : explain.source === "goal" ? (
+            <>This is the goal, so h = 0.</>
+          ) : (
+            <>h comes from the straight-line bound here ({mins(explain.h)} min): this close
+              to the goal no landmark gives a larger one.</>
+          )}
+        </p>
+      )}
 
       {visual.threshold !== null && (
         <p className="panel-note">
@@ -113,9 +156,20 @@ export function NodeInspector({ visual }: { visual: VisualState | null }) {
 
       {informedness !== null && (
         <p className="panel-note">
-          Heuristic informedness h/h* = <b>{informedness.toFixed(2)}</b> — straight-line
-          distance at 45 km/h underestimates the real journey, which is why A* still
-          has to explore widely.
+          Heuristic informedness h/h* = <b>{informedness.toFixed(2)}</b>
+          {usesLandmarks ? (
+            informedness >= 0.995 ? (
+              <> — the landmark bound is exact on this trip, so A* expands only
+                stations on the route.</>
+            ) : (
+              <> — exact distances from the landmarks bound the real journey from
+                below, never less than the straight-line bound.</>
+            )
+          ) : (
+            <> — straight-line distance at 45 km/h underestimates the real journey
+              {trace?.algorithm === "astar" || trace?.algorithm === "ida_star"
+                ? ", which is why the search still has to explore widely." : "."}</>
+          )}
         </p>
       )}
 
