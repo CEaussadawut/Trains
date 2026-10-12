@@ -238,6 +238,32 @@ export interface HeuristicExplain {
   second?: number;
 }
 
+/** One landmark's step in the ALT calculation: bound = first − second, where
+ *  beyond_goal: first = route here→L,    second = route goal→L
+ *  behind_you:  first = route L→goal,    second = route L→here
+ *  Paths are station ids, in travel order. */
+export interface LandmarkCalcStep {
+  landmark: Node;
+  via: "beyond_goal" | "behind_you";
+  first: number;
+  second: number;
+  bound: number;
+  first_path: string[];
+  second_path: string[];
+}
+
+export interface LandmarkCalcPayload {
+  scenario: Scenario;
+  node: Node;
+  goal: string;
+  steps: LandmarkCalcStep[];
+  /** Index of the winning step, or null when the straight line (or h = 0) wins. */
+  best: number | null;
+  straight_line: number;
+  h: number;
+  source: "landmark" | "straight_line" | "goal";
+}
+
 export interface HeuristicPayload {
   goal: string;
   scenario: Scenario;

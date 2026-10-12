@@ -1,5 +1,5 @@
 import type {
-  ComparePayload, HeuristicPayload, Meta, Network, Scenario, TracePayload, Weights,
+  ComparePayload, HeuristicPayload, LandmarkCalcPayload, Meta, Network, Scenario, TracePayload, Weights,
 } from "./types";
 
 export class ApiError extends Error {
@@ -48,6 +48,14 @@ export const api = {
     request<HeuristicPayload>(
       `/api/heuristic?scenario=${scenario}&goal=${encodeURIComponent(goal)}` +
       `&algorithm=${encodeURIComponent(algorithm)}` +
+      `&w_time=${weights.time}&w_cost=${weights.cost}&w_transit=${weights.transit}`,
+    ),
+
+  /** The ALT calculation of h for one node, landmark by landmark, with routes. */
+  landmarkCalc: (scenario: Scenario, goal: string, node: [string, string], weights: Weights) =>
+    request<LandmarkCalcPayload>(
+      `/api/landmark_calc?scenario=${scenario}&goal=${encodeURIComponent(goal)}` +
+      `&station=${encodeURIComponent(node[0])}&line=${encodeURIComponent(node[1])}` +
       `&w_time=${weights.time}&w_cost=${weights.cost}&w_transit=${weights.transit}`,
     ),
 
