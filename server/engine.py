@@ -37,6 +37,7 @@ ALGORITHM_FAMILY = {
     "hill_climbing": "heuristic search",
     "beam": "heuristic search",
     "astar": "informed search",
+    "astar_landmark": "informed search",
     "ida_star": "informed search",
 }
 
@@ -51,6 +52,7 @@ ALGORITHM_LABEL = {
     "hill_climbing": "Hill climbing",
     "beam": "Beam search",
     "astar": "A*",
+    "astar_landmark": "A* + ALT landmarks",
     "ida_star": "IDA*",
 }
 
@@ -78,8 +80,13 @@ def get_graph(scenario: str) -> MetroGraph:
 
 
 def warm_up() -> None:
+    """Build every scenario, and the default-weighting landmark table with it.
+
+    Without this the first `astar_landmark` request would pay for 2k Dijkstras
+    and look slow for a reason that has nothing to do with the search.
+    """
     for scenario in SCENARIOS:
-        get_graph(scenario)
+        get_graph(scenario).landmark_table()
 
 
 def build_weights(raw: dict[str, Any] | None) -> Weights:

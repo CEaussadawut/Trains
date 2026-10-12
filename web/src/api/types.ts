@@ -4,7 +4,7 @@ export type Scenario = "operating" | "under_construction" | "planned";
 export type Algorithm =
   | "bfs" | "dfs" | "ucs" | "dls" | "ids" | "bidirectional"
   | "greedy" | "hill_climbing" | "beam"
-  | "astar" | "ida_star";
+  | "astar" | "astar_landmark" | "ida_star";
 
 export interface Station {
   id: string;
