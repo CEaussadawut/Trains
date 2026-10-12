@@ -130,7 +130,7 @@ export function Controls() {
 
       <button className="primary" disabled={!ready || running}
         onClick={() => (mode === "animate" ? run() : runCompare())}>
-        {running ? "Running…" : mode === "animate" ? "Run search" : "Compare all five"}
+        {running ? "Running…" : mode === "animate" ? "Run search" : "Compare every algorithm"}
       </button>
     </aside>
   );

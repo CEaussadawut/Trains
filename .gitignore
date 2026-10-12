@@ -22,3 +22,6 @@ bench_*.md
 
 # Notebooks
 *.ipynb
+
+# Local agent notes, not part of the submission
+CLAUDE.md

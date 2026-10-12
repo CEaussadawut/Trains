@@ -1,5 +1,6 @@
 """Turn engine objects into JSON-safe payloads for the web client."""
 from __future__ import annotations
+import csv
 import math
 from typing import Any
 
@@ -131,6 +132,45 @@ def network_payload(graph: MetroGraph, full: MetroGraph | None = None) -> dict:
             "rail_edges": graph.num_rail_edges,
             "transfer_edges": sum(1 for edge in transfers if edge["active"]),
         },
+        "quality": data_quality(graph),
+    }
+
+
+def data_quality(graph: MetroGraph) -> dict:
+    """How much of the active scenario is estimated rather than observed.
+
+    The UI states this out loud, so it is computed from the CSVs for the
+    scenario actually on screen rather than hardcoded -- hardcoded figures would
+    drift the moment the dataset is corrected, which is exactly the kind of
+    quiet misinformation the disclaimer exists to prevent.
+    """
+    def read(name: str) -> list[dict[str, str]]:
+        with open(graph.data_dir / name, encoding="utf-8", newline="") as handle:
+            return list(csv.DictReader(handle))
+
+    active_station = {
+        row["station_id"]
+        for row in read("stations.csv")
+        if any(line in graph.active_lines for line in row["lines"].split("|"))
+    }
+
+    edges = [row for row in read("edges.csv") if row["line_id"] in graph.active_lines]
+    stations = [row for row in read("stations.csv") if row["station_id"] in active_station]
+    transfers = [
+        row for row in read("transfers.csv")
+        if row["from_id"] in active_station and row["to_id"] in active_station
+    ]
+
+    def tally(rows: list[dict[str, str]], **flags: str) -> dict:
+        out: dict[str, int] = {"total": len(rows)}
+        for label, (column, value) in flags.items():
+            out[label] = sum(1 for row in rows if row.get(column) == value)
+        return out
+
+    return {
+        "edges": tally(edges, estimated=("is_estimated", "1"), unverified=("verified", "0")),
+        "stations": tally(stations, interpolated=("coord_source", "interpolated")),
+        "transfers": tally(transfers, estimated=("is_estimated", "1"), unverified=("verified", "0")),
     }
 
 

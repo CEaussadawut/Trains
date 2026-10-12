@@ -1,0 +1,20 @@
+# Named-tunnel config for the metro visualizer.
+#
+# Copy to ~/.cloudflared/config.yml and replace the three placeholders.
+# `cloudflared tunnel create metro-visualizer` prints the UUID and writes the
+# credentials file this points at.
+
+tunnel: metro-visualizer
+credentials-file: /home/CHANGE_ME_USER/.cloudflared/CHANGE_ME_TUNNEL_UUID.json
+
+# Fail fast on a bad config rather than at the first request.
+originRequest:
+  connectTimeout: 10s
+  # The app server is plain local HTTP; nothing here crosses the network
+  # unencrypted, because cloudflared terminates TLS at Cloudflare's edge.
+
+ingress:
+  - hostname: CHANGE_ME_HOSTNAME       # e.g. metro.example.com
+    service: http://127.0.0.1:8000
+  # Required catch-all: anything else gets a 404 instead of reaching the app.
+  - service: http_status:404

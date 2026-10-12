@@ -48,7 +48,7 @@ export function CompareView() {
   const compare = useStore((s) => s.compare);
   const running = useStore((s) => s.running);
 
-  if (running) return <div className="empty">Benchmarking all five algorithms…</div>;
+  if (running) return <div className="empty">Benchmarking every algorithm…</div>;
   if (!compare) {
     return (
       <div className="empty">

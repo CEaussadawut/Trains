@@ -1,0 +1,14 @@
+# User service for the Cloudflare tunnel. Requires ~/.cloudflared/config.yml.
+[Unit]
+Description=cloudflared tunnel for the metro visualizer
+After=network-online.target metro-app.service
+Wants=metro-app.service
+
+[Service]
+Type=exec
+ExecStart=/usr/local/bin/cloudflared --no-autoupdate tunnel run
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

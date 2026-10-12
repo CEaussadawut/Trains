@@ -104,6 +104,68 @@ python3 -m server --dist web/dist         # serves the app and the API on :8000
 
 ---
 
+## Hosting it for review (Cloudflare named tunnel)
+
+The app serves from a single Python process, so sharing it is just "run it and
+point a tunnel at it". `scripts/host.sh` type-checks, builds the frontend and
+serves everything on `127.0.0.1:8000`.
+
+It binds to loopback deliberately — `cloudflared` connects locally, so the app
+is never directly reachable on your network and everything public goes through
+Cloudflare.
+
+### One-time setup
+
+Steps 1, 2 and 4 talk to your Cloudflare account; step 1 opens a browser.
+
+```bash
+# 1. Authorise cloudflared and pick the domain to use
+cloudflared tunnel login
+
+# 2. Create the tunnel (prints a UUID and writes ~/.cloudflared/<UUID>.json)
+cloudflared tunnel create metro-visualizer
+
+# 3. Fill in the three placeholders: your username, that UUID, your hostname
+cp scripts/cloudflared.config.example.yml ~/.cloudflared/config.yml
+$EDITOR ~/.cloudflared/config.yml
+
+# 4. Point DNS at the tunnel
+cloudflared tunnel route dns metro-visualizer metro.example.com
+```
+
+### Running it
+
+Two processes, in either order:
+
+```bash
+./scripts/host.sh                       # builds, then serves on :8000
+cloudflared tunnel run metro-visualizer # publishes it at your hostname
+```
+
+To keep it up across reboots, install the user services in `scripts/systemd/`
+(the header of `metro-app.service` has the commands). Those need
+`sudo loginctl enable-linger $USER` to survive logout.
+
+### Restricting it to one person
+
+A named tunnel is public by default — anyone with the hostname can open it. To
+limit it to your professor, add a Cloudflare Access policy in the dashboard:
+**Zero Trust → Access → Applications → Add a self-hosted application**, set the
+domain to your hostname, and add a policy of *Allow / Emails / their address*.
+They get a one-time code by email the first time they visit. This requires no
+change to the app, which has no authentication of its own.
+
+### Notes
+
+- The API is read-only — nothing it exposes can modify the repo or the dataset.
+  User-supplied knobs (`repeats`, `max_events`, `beam_width`, `depth_limit`) are
+  range-checked, because every engine call holds a process-wide lock and an
+  unbounded value would otherwise stall the server for everyone.
+- The server speaks HTTP/1.1 with keep-alive; without it the ~640 KB bundle and
+  ~135 KB network payload would each reconnect per file over the tunnel.
+
+---
+
 ## What the visualizer shows
 
 **Animate** replays one search: the frontier, the nodes already expanded, the

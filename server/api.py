@@ -22,6 +22,10 @@ logger = logging.getLogger(__name__)
 
 MAX_BODY_BYTES = 1 << 20
 DEFAULT_MAX_EVENTS = 20_000
+MAX_EVENTS_CAP = 200_000
+MAX_BEAM_WIDTH = 200
+MAX_DEPTH_LIMIT = 1_000
+MAX_REPEATS = 25
 
 
 def _meta(_query: dict, _body: dict) -> dict:
@@ -70,24 +74,31 @@ def _heuristic(query: dict, _body: dict) -> dict:
     }
 
 
+def _bounded_int(body: dict, key: str, default: int, low: int, high: int) -> int:
+    """Read an int knob and clamp-check it.
+
+    These are reachable from a public URL and every engine call holds a global
+    lock, so an unbounded `repeats` or `max_events` is a denial-of-service
+    vector rather than just a silly request.
+    """
+    try:
+        value = int(body.get(key, default))
+    except (TypeError, ValueError) as exc:
+        raise engine.BadRequest(f"{key} must be an integer") from exc
+    if not low <= value <= high:
+        raise engine.BadRequest(f"{key} must be between {low} and {high}")
+    return value
+
+
 def _request_common(body: dict) -> tuple[Any, str, str, Any, int, int]:
     graph = engine.get_graph(str(body.get("scenario", "operating")))
     start_id = str(body.get("start", ""))
     goal_id = str(body.get("goal", ""))
     engine.require_stations(graph, start_id, goal_id)
     weights = engine.build_weights(body.get("weights"))
-    try:
-        beam_width = int(body.get("beam_width", 5))
-    except (TypeError, ValueError) as exc:
-        raise engine.BadRequest("beam_width must be an integer") from exc
-    if beam_width < 1:
-        raise engine.BadRequest("beam_width must be >= 1")
-    try:
-        depth_limit = int(body.get("depth_limit", DEFAULT_DEPTH_LIMIT))
-    except (TypeError, ValueError) as exc:
-        raise engine.BadRequest("depth_limit must be an integer") from exc
-    if depth_limit < 0:
-        raise engine.BadRequest("depth_limit must be >= 0")
+    # A beam wider than the graph, or a depth past its diameter, buys nothing.
+    beam_width = _bounded_int(body, "beam_width", 5, 1, MAX_BEAM_WIDTH)
+    depth_limit = _bounded_int(body, "depth_limit", DEFAULT_DEPTH_LIMIT, 0, MAX_DEPTH_LIMIT)
     return graph, start_id, goal_id, weights, beam_width, depth_limit
 
 
@@ -122,7 +133,7 @@ def _trace(_query: dict, body: dict) -> dict:
     default_phases = "last" if algorithm in ("ida_star", "ids") else "all"
     try:
         tracer = Tracer(
-            max_events=int(options.get("max_events", DEFAULT_MAX_EVENTS)),
+            max_events=_bounded_int(options, "max_events", DEFAULT_MAX_EVENTS, 1, MAX_EVENTS_CAP),
             detail=str(options.get("detail", "full")),
             keep_phases=str(options.get("keep_phases", default_phases)),
         )
@@ -149,10 +160,7 @@ def _trace(_query: dict, body: dict) -> dict:
 
 def _compare(_query: dict, body: dict) -> dict:
     graph, start_id, goal_id, weights, beam_width, depth_limit = _request_common(body)
-    try:
-        repeats = int(body.get("repeats", 5))
-    except (TypeError, ValueError) as exc:
-        raise engine.BadRequest("repeats must be an integer") from exc
+    repeats = _bounded_int(body, "repeats", 5, 1, MAX_REPEATS)
 
     measurements = engine.compare_all(
         graph, start_id, goal_id,
@@ -198,6 +206,10 @@ ROUTES: dict[tuple[str, str], Callable[[dict, dict], dict]] = {
 
 class Handler(BaseHTTPRequestHandler):
     server_version = "MetroVisualizer/1.0"
+    # Keep-alive matters through a tunnel: the SPA pulls a ~640 KB bundle plus a
+    # ~135 KB network payload, and HTTP/1.0 would reconnect for every file.
+    # Safe here because _send always writes an accurate Content-Length.
+    protocol_version = "HTTP/1.1"
     dist: Path | None = None
 
     def log_message(self, fmt: str, *args: Any) -> None:
@@ -213,6 +225,8 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(status)
         self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(body)))
+        if self.close_connection:
+            self.send_header("Connection", "close")
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Access-Control-Allow-Headers", "Content-Type")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
@@ -248,6 +262,15 @@ class Handler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         handler = ROUTES.get((method, parsed.path))
 
+        # Consume the body before routing. On a keep-alive connection an unread
+        # body would be parsed as the next request line.
+        try:
+            body = self._read_body() if method == "POST" else {}
+        except engine.BadRequest as exc:
+            self.close_connection = True
+            self._error(HTTPStatus.BAD_REQUEST, "invalid_request", str(exc))
+            return
+
         if handler is None:
             if method == "GET" and not parsed.path.startswith("/api/"):
                 self._serve_static(parsed.path)
@@ -256,7 +279,6 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         try:
-            body = self._read_body() if method == "POST" else {}
             self._send(HTTPStatus.OK, handler(parse_qs(parsed.query), body))
         except engine.StationNotActiveError as exc:
             # Subclasses ValueError, so it must be caught first.
@@ -277,8 +299,11 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         relative = path.lstrip("/") or "index.html"
-        candidate = (self.dist / relative).resolve()
-        if not str(candidate).startswith(str(self.dist.resolve())) or not candidate.is_file():
+        root = self.dist.resolve()
+        candidate = (root / relative).resolve()
+        # is_relative_to, not startswith: "/srv/dist-backup" has "/srv/dist" as a
+        # string prefix but is a different directory.
+        if not candidate.is_relative_to(root) or not candidate.is_file():
             candidate = self.dist / "index.html"  # SPA fallback
         if not candidate.is_file():
             self._error(HTTPStatus.NOT_FOUND, "not_found", path)

@@ -156,6 +156,34 @@ class NetworkTest(ApiTestCase):
             self.assertTrue(by_id[line["stations"][0]]["terminal"], line["id"])
             self.assertTrue(by_id[line["stations"][-1]]["terminal"], line["id"])
 
+    def test_quality_figures_describe_the_requested_scenario(self) -> None:
+        """The UI prints these as a disclaimer, so they must track the scenario
+        shown rather than being hardcoded."""
+        seen = {}
+        for scenario in ("operating", "under_construction", "planned"):
+            _status, body = self.get(f"/api/network?scenario={scenario}")
+            quality = body["quality"]
+            edges, stations, transfers = (
+                quality["edges"], quality["stations"], quality["transfers"]
+            )
+
+            # Totals must match the active network, and parts cannot exceed them.
+            self.assertEqual(edges["total"], body["stats"]["rail_edges"], scenario)
+            self.assertEqual(stations["total"], body["stats"]["active_stations"], scenario)
+            for part, whole in (
+                (edges["estimated"], edges["total"]),
+                (edges["unverified"], edges["total"]),
+                (stations["interpolated"], stations["total"]),
+                (transfers["estimated"], transfers["total"]),
+            ):
+                self.assertGreaterEqual(part, 0, scenario)
+                self.assertLessEqual(part, whole, scenario)
+            seen[scenario] = edges
+
+        # Each larger scenario adds unbuilt, therefore estimated, track.
+        self.assertLess(seen["operating"]["total"], seen["planned"]["total"])
+        self.assertLess(seen["operating"]["estimated"], seen["planned"]["estimated"])
+
     def test_unknown_scenario_is_rejected(self) -> None:
         status, body = self.get("/api/network?scenario=tomorrow")
         self.assertEqual(status, 400)
@@ -344,6 +372,67 @@ class ConcurrencyTest(ApiTestCase):
             self.assertEqual(status, 200)
             self.assertTrue(body["solved"])
             self.assertGreater(body["route"]["peak_memory_bytes"], 0)
+
+
+class PublicExposureTest(ApiTestCase):
+    """These knobs are reachable from a public URL and every engine call holds a
+    global lock, so an unbounded value is a denial-of-service vector."""
+
+    def test_oversized_knobs_are_rejected(self) -> None:
+        base = {"start": "CEN", "goal": "E4"}
+        for path, payload in (
+            ("/api/compare", {**base, "repeats": 10_000}),
+            ("/api/search", {**base, "beam_width": 100_000}),
+            ("/api/search", {**base, "depth_limit": 10_000_000}),
+            ("/api/trace", {**base, "trace": {"max_events": 10_000_000}}),
+        ):
+            status, body = self.post(path, payload)
+            self.assertEqual(status, 400, f"{path} {payload}")
+            self.assertEqual(body["code"], "invalid_request")
+
+    def test_sane_knobs_still_work(self) -> None:
+        status, _body = self.post("/api/compare", {"start": "CEN", "goal": "E4", "repeats": 1})
+        self.assertEqual(status, 200)
+        status, _body = self.post(
+            "/api/trace", {"start": "CEN", "goal": "E4", "trace": {"max_events": 500}}
+        )
+        self.assertEqual(status, 200)
+
+    def test_a_keep_alive_connection_survives_many_requests(self) -> None:
+        """HTTP/1.1 is on, so a desynced connection would corrupt later reads."""
+        import http.client
+
+        conn = http.client.HTTPConnection("127.0.0.1", self.server.server_address[1], timeout=30)
+        try:
+            for _ in range(3):
+                conn.request("GET", "/api/meta")
+                first = conn.getresponse()
+                self.assertEqual(first.status, 200)
+                first.read()
+
+                # A POST to an unknown route: its body must still be drained, or
+                # the next request on this connection reads it as a request line.
+                conn.request("POST", "/api/nope", body=json.dumps({"x": "y" * 500}),
+                             headers={"Content-Type": "application/json"})
+                missing = conn.getresponse()
+                self.assertEqual(missing.status, 404)
+                missing.read()
+
+                conn.request("POST", "/api/search",
+                             body=json.dumps({"start": "CEN", "goal": "E4"}),
+                             headers={"Content-Type": "application/json"})
+                search = conn.getresponse()
+                self.assertEqual(search.status, 200)
+                self.assertTrue(json.loads(search.read())["solved"])
+        finally:
+            conn.close()
+
+    def test_static_paths_cannot_escape_the_dist_directory(self) -> None:
+        for path in ("/../metro_router.py", "/..%2f..%2fetc%2fpasswd", "/assets/../../../etc/passwd"):
+            status, body = self.get(path)
+            # No dist is configured in tests, so every static path is refused.
+            self.assertEqual(status, 404, path)
+            self.assertNotIn("DEFAULT_DATA_DIR", json.dumps(body))
 
 
 class StaticTest(ApiTestCase):

@@ -62,6 +62,12 @@ export interface Network {
     rail_edges: number;
     transfer_edges: number;
   };
+  /** How much of the active scenario is estimated rather than observed. */
+  quality: {
+    edges: { total: number; estimated: number; unverified: number };
+    stations: { total: number; interpolated: number };
+    transfers: { total: number; estimated: number; unverified: number };
+  };
 }
 
 export interface Weights {

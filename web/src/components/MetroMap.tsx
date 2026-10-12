@@ -19,6 +19,8 @@ const ALL_LABELS_ZOOM = 1.6;
 // looking at the whole city. Once you have zoomed in you are inspecting, not
 // scanning, so the map returns to full strength.
 const FOCUS_ZOOM = 2.5;
+/** Pixels a press may travel before it is a pan rather than a click. */
+const DRAG_SLOP = 4;
 
 /** Search state never touches line colour: hue means geography, rings mean algorithm. */
 const STATE_RING: Partial<Record<StationState, string>> = {
@@ -106,6 +108,9 @@ export function MetroMap() {
 
   const [transform, setTransform] = useState<Transform>({ k: 1, x: 0, y: 0 });
   const dragging = useRef<{ x: number; y: number; tx: number; ty: number } | null>(null);
+  // Set once a press travels far enough to count as a pan, so releasing over a
+  // station does not also pick it as an endpoint.
+  const panned = useRef(false);
   const svgRef = useRef<SVGSVGElement>(null);
 
   const visual = useMemo(() => (replay ? replay.at(step) : null), [replay, step]);
@@ -182,23 +187,52 @@ export function MetroMap() {
   }, []);
 
   const onPointerDown = (event: React.PointerEvent) => {
+    if (event.button !== 0 && event.button !== 1) return;
+    // Without preventDefault the browser begins selecting the SVG's text
+    // instead of panning -- the reason dragging used to need the middle button.
+    event.preventDefault();
+    panned.current = false;
     dragging.current = { x: event.clientX, y: event.clientY, tx: transform.x, ty: transform.y };
-    (event.target as Element).setPointerCapture?.(event.pointerId);
+    // Deliberately no pointer capture here. Capturing on press retargets the
+    // following click to the <svg>, so a station's own click handler never runs
+    // and clicking a station stops selecting it. Capture is taken in
+    // onPointerMove instead, once the press is actually a drag.
   };
 
   const onPointerMove = (event: React.PointerEvent) => {
     const drag = dragging.current;
     if (!drag || !svgRef.current) return;
+    const dx = event.clientX - drag.x;
+    const dy = event.clientY - drag.y;
+    if (!panned.current && Math.hypot(dx, dy) > DRAG_SLOP) {
+      panned.current = true;
+      // Now that it is a drag, capture on the <svg> so panning survives the
+      // pointer leaving a station dot that re-renders underneath it.
+      svgRef.current.setPointerCapture?.(event.pointerId);
+    }
     const rect = svgRef.current.getBoundingClientRect();
     const scale = VIEW.width / rect.width;
     setTransform((current) => ({
       ...current,
-      x: drag.tx + (event.clientX - drag.x) * scale,
-      y: drag.ty + (event.clientY - drag.y) * scale,
+      x: drag.tx + dx * scale,
+      y: drag.ty + dy * scale,
     }));
   };
 
-  const endDrag = () => { dragging.current = null; };
+  const endDrag = (event: React.PointerEvent) => {
+    if (svgRef.current?.hasPointerCapture?.(event.pointerId)) {
+      svgRef.current.releasePointerCapture(event.pointerId);
+    }
+    dragging.current = null;
+  };
+
+  const handlePick = useCallback(
+    (id: string) => {
+      if (panned.current) return;
+      pickStation(id);
+    },
+    [pickStation],
+  );
 
   if (!network || !layouts) return <div className="map-empty">loading network…</div>;
 
@@ -298,7 +332,7 @@ export function MetroMap() {
             return (
               <StationDot key={station.id} station={station} point={point}
                 state={states.get(station.id) ?? "idle"} radius={radius}
-                onPick={pickStation} onHover={setHovered} />
+                onPick={handlePick} onHover={setHovered} />
             );
           })}
 
