@@ -337,6 +337,66 @@ class HeuristicTest(ApiTestCase):
         status, _body = self.get("/api/heuristic?goal=NOPE")
         self.assertEqual(status, 400)
 
+    def test_default_is_the_straight_line_bound(self) -> None:
+        """Older clients send no algorithm and must get what they always got."""
+        status, body = self.get("/api/heuristic?scenario=operating&goal=BL01")
+        self.assertEqual(status, 200)
+        self.assertEqual(body["kind"], "straight_line")
+        self.assertNotIn("explain", body)
+        self.assertAlmostEqual(body["h"]["N24"] / 60, 38.9, places=1)
+
+    def test_alt_returns_the_landmark_bound_the_search_uses(self) -> None:
+        """The map and inspector must show the h A* + ALT actually evaluates.
+        Checked against the trace itself: same node, same number."""
+        status, body = self.get(
+            "/api/heuristic?scenario=operating&goal=BL01&algorithm=astar_landmark")
+        self.assertEqual(status, 200)
+        self.assertEqual(body["kind"], "landmark")
+        self.assertEqual(len(body["landmarks"]), 6)
+        _status, trace = self.post("/api/trace", {
+            "start": "N24", "goal": "BL01", "algorithm": "astar_landmark"})
+        expands = [e for e in trace["events"] if e["kind"] == "expand"]
+        for event in expands:
+            station_id, line_id = event["node"]
+            entry = body["explain"][f"{station_id}|{line_id}"]
+            self.assertAlmostEqual(entry["h"], event["h"], places=6, msg=event["node"])
+            self.assertLessEqual(body["h"][station_id], entry["h"] + 1e-9)
+
+    def test_alt_breakdown_is_the_subtraction_it_claims(self) -> None:
+        """Khu Khot -> Tha Phra: Lak Song lies beyond the goal, and
+        d(n -> Lak Song) - d(goal -> Lak Song) is the whole remaining trip."""
+        _status, body = self.get(
+            "/api/heuristic?scenario=operating&goal=BL01&algorithm=astar_landmark")
+        entry = body["explain"]["N24|SUKHUMVIT"]
+        self.assertEqual(entry["source"], "landmark")
+        self.assertEqual(entry["landmark"], ["BL39", "BLUE"])
+        self.assertEqual(entry["via"], "beyond_goal")
+        self.assertAlmostEqual(entry["first"] - entry["second"], entry["h"], places=6)
+        self.assertAlmostEqual(entry["h"] / 60, 76.7, places=1)
+        self.assertGreater(entry["h"], entry["straight_line"])
+        for key, entry in body["explain"].items():
+            if entry["source"] == "landmark":
+                self.assertAlmostEqual(entry["first"] - entry["second"], entry["h"], places=6, msg=key)
+            self.assertGreaterEqual(entry["h"], entry["straight_line"] - 1e-9, key)
+        self.assertEqual(body["explain"]["BL01|BLUE"]["source"], "goal")
+
+    def test_alt_heuristic_follows_the_weights(self) -> None:
+        """A different weighting is a different metric, so a different table."""
+        base = "/api/heuristic?scenario=operating&goal=BL01&algorithm=astar_landmark"
+        _s, plain = self.get(base)
+        _s, priced = self.get(base + "&w_time=1&w_cost=30&w_transit=0")
+        self.assertNotAlmostEqual(plain["h"]["A1"], priced["h"]["A1"], places=3)
+
+    def test_bad_algorithm_or_weights_are_rejected(self) -> None:
+        self.assertEqual(self.get("/api/heuristic?goal=BL01&algorithm=nope")[0], 400)
+        self.assertEqual(self.get("/api/heuristic?goal=BL01&w_time=-1")[0], 400)
+        self.assertEqual(self.get("/api/heuristic?goal=BL01&w_time=0&w_cost=0&w_transit=0")[0], 400)
+
+    def test_trace_reports_the_weights_it_ran_with(self) -> None:
+        _status, trace = self.post("/api/trace", {
+            "start": "N24", "goal": "BL01", "weights": {"time": 1, "cost": 30}})
+        self.assertEqual(trace["weights"], {"time": 1.0, "cost": 30.0, "transit": 0.0})
+
 
 class CompareTest(ApiTestCase):
     def test_every_algorithm_is_scored_against_dijkstra(self) -> None:

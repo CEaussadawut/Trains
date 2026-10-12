@@ -62,16 +62,21 @@ def _network(query: dict, _body: dict) -> dict:
 
 
 def _heuristic(query: dict, _body: dict) -> dict:
+    """h(n) to `goal` as `algorithm` computes it, under the given weights.
+
+    `algorithm` defaults to astar (the straight-line bound) so older clients get
+    exactly what they always got; A* + ALT gets its landmark bound plus the
+    per-node breakdown the inspector prints.
+    """
     graph = engine.get_graph(_one(query, "scenario", "operating"))
     goal_id = _one(query, "goal", "")
     engine.require_stations(graph, goal_id)
-    values = engine.heuristic_by_station(graph, goal_id)
-    return {
-        "goal": goal_id,
-        "scenario": graph.scenario,
-        "max_h": max(values.values()) if values else 0.0,
-        "h": values,
-    }
+    weights = engine.build_weights({
+        key: _one(query, f"w_{key}", str(default))
+        for key, default in (("time", 1.0), ("cost", 0.0), ("transit", 0.0))
+    })
+    view = engine.heuristic_view(graph, goal_id, _one(query, "algorithm", "astar"), weights)
+    return {"goal": goal_id, "scenario": graph.scenario, **view}
 
 
 def _bounded_int(body: dict, key: str, default: int, low: int, high: int) -> int:
@@ -154,6 +159,9 @@ def _trace(_query: dict, body: dict) -> dict:
         "error": error,
         "route": serialize.route_payload(graph, route) if route else None,
         "optimal_sec": engine.reference_duration(graph, start_id, goal_id),
+        # g/h/f in the events are in these weighted units; the UI needs them
+        # to compare h with optimal_sec, which is plain seconds.
+        "weights": {"time": weights.time, "cost": weights.cost, "transit": weights.transit},
     })
     return payload
 

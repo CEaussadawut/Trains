@@ -187,6 +187,8 @@ export interface TracePayload {
   error: string;
   route: RoutePayload | null;
   optimal_sec: number | null;
+  /** The weights g/h/f were computed under. Absent from servers older than ALT. */
+  weights?: Weights;
 }
 
 export interface CompareRow {
@@ -222,9 +224,30 @@ export interface Meta {
   };
 }
 
+/** How one node's h was obtained under A* + ALT. With `source: "landmark"`,
+ *  h = first − second:
+ *    beyond_goal — the landmark lies past the goal: d(n→L) − d(goal→L)
+ *    behind_you  — the landmark lies behind n:      d(L→goal) − d(L→n) */
+export interface HeuristicExplain {
+  h: number;
+  straight_line: number;
+  source: "landmark" | "straight_line" | "goal";
+  landmark?: Node;
+  via?: "beyond_goal" | "behind_you";
+  first?: number;
+  second?: number;
+}
+
 export interface HeuristicPayload {
   goal: string;
   scenario: Scenario;
   max_h: number;
+  /** Per station; for ALT the smallest h over the station's platforms. */
   h: Record<string, number>;
+  /** Optional so an older server (straight-line only) still type-checks. */
+  kind?: "straight_line" | "landmark";
+  algorithm?: Algorithm;
+  landmarks?: Node[];
+  /** Keyed "STATION|LINE". */
+  explain?: Record<string, HeuristicExplain>;
 }

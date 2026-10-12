@@ -266,6 +266,15 @@ button.primary:disabled { background: var(--surface-2); color: var(--muted); cur
 .ring-expanded { border-color: var(--expanded); }
 .ring-pruned { border-color: var(--pruned); }
 .ring-stuck { border-color: var(--stuck); }
+
+/* ALT landmarks: outlined diamond, solid when it is the one supplying h. */
+.landmark rect { fill: var(--surface-1); stroke: var(--ink); }
+.landmark text { fill: var(--ink); font-weight: 700; }
+.landmark-active rect { fill: var(--ink); }
+.landmark-active text { fill: var(--surface-1); }
+.key-landmark { width: 10px; height: 10px; border: 1.5px solid var(--ink); background: var(--surface-1);
+                transform: rotate(45deg); display: inline-block; margin: 0 2px; }
+.alt-note b { font-weight: 700; }
 .key-route { width: 14px; height: 5px; border-radius: 3px; background: var(--ink); flex: none; }
 
 /* ---- playback ---- */

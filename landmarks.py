@@ -156,6 +156,37 @@ class GoalBound:
                 usable.append(i)
         return cls(table, tuple(to_goal_max), tuple(from_goal_min), tuple(usable))
 
+    def explain(self, node: Node) -> dict | None:
+        """Which landmark produced `self(node)`, and from which two distances.
+
+        Returns None when no landmark gives a positive bound (at the goal, or
+        when every landmark sits "beside" the trip). Otherwise:
+
+            via="beyond_goal"  the landmark lies past the goal, n -> goal -> L:
+                               bound = d(n -> L) - d(goal -> L)
+            via="behind_you"   the landmark lies behind n, L -> n -> goal:
+                               bound = d(L -> goal) - d(L -> n)
+
+        In both cases bound == first - second, so a UI can print the
+        subtraction as-is. Ties go to the earlier landmark, matching __call__.
+        """
+        best: dict | None = None
+        table = self.table
+        for i in self.usable:
+            d_to = table.dist_to[i].get(node)
+            if d_to is not None and self.to_goal_max[i] != math.inf:
+                value = d_to - self.to_goal_max[i]
+                if value > (best["bound"] if best else 0.0):
+                    best = {"landmark": table.landmarks[i], "via": "beyond_goal",
+                            "first": d_to, "second": self.to_goal_max[i], "bound": value}
+            d_from = table.dist_from[i].get(node)
+            if d_from is not None and self.from_goal_min[i] != -math.inf:
+                value = self.from_goal_min[i] - d_from
+                if value > (best["bound"] if best else 0.0):
+                    best = {"landmark": table.landmarks[i], "via": "behind_you",
+                            "first": self.from_goal_min[i], "second": d_from, "bound": value}
+        return best
+
     def __call__(self, node: Node) -> float:
         """The ALT lower bound on the cost from `node` to the goal set."""
         best = 0.0

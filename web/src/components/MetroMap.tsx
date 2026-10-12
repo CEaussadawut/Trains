@@ -129,6 +129,18 @@ export function MetroMap() {
     [visual, start, goal, network],
   );
 
+  // A* + ALT: where the landmarks are, and which one is supplying h for the
+  // node being expanded right now (the inspector prints its arithmetic).
+  const landmarkIds = useMemo(
+    () => (heuristic?.kind === "landmark" ? (heuristic.landmarks ?? []).map(([id]) => id) : []),
+    [heuristic],
+  );
+  const activeLandmark = useMemo(() => {
+    if (!visual?.current || heuristic?.kind !== "landmark") return null;
+    const entry = heuristic.explain?.[`${visual.current[0]}|${visual.current[1]}`];
+    return entry?.source === "landmark" && entry.landmark ? entry.landmark[0] : null;
+  }, [visual, heuristic]);
+
   const pathEdges = useMemo(() => {
     const path = visual?.finalPath;
     if (!path) return [];
@@ -333,6 +345,23 @@ export function MetroMap() {
               <StationDot key={station.id} station={station} point={point}
                 state={states.get(station.id) ?? "idle"} radius={radius}
                 onPick={handlePick} onHover={setHovered} />
+            );
+          })}
+
+          {/* ALT landmarks: a shape, not a hue -- hue already means "which
+              line" here. Filled = the landmark h is coming from right now. */}
+          {landmarkIds.map((id) => {
+            const point = positions.get(id);
+            if (!point) return null;
+            const active = id === activeLandmark;
+            const size = radius * (active ? 7.2 : 5.8);
+            return (
+              <g key={`lm-${id}`} className={`landmark${active ? " landmark-active" : ""}`}
+                transform={`translate(${point.x} ${point.y})`} pointerEvents="none">
+                <rect x={-size / 2} y={-size / 2} width={size} height={size}
+                  transform="rotate(45)" strokeWidth={1.5 * strokeScale} />
+                <text y={size * 0.2} fontSize={size * 0.62} textAnchor="middle">L</text>
+              </g>
             );
           })}
 

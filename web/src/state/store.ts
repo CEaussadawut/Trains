@@ -166,7 +166,7 @@ export const useStore = create<State>((set, get) => ({
           scenario, algorithm, start, goal, weights,
           beam_width: beamWidth, depth_limit: depthLimit, trace: { max_events: maxEvents },
         }),
-        api.heuristic(scenario, goal),
+        api.heuristic(scenario, goal, algorithm, weights),
       ]);
       set({
         trace,
