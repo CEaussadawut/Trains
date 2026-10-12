@@ -75,7 +75,7 @@ export function App() {
       <header className="topbar">
         <div className="brand">
           <h1>Bangkok Metro Search</h1>
-          <p>Blind, heuristic and informed search, step by step</p>
+          <p>Blind and informed (heuristic) search, step by step</p>
         </div>
         <nav className="tabs">
           <button className={mode === "animate" ? "on" : ""} onClick={() => setMode("animate")}>

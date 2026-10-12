@@ -26,6 +26,11 @@ _ENGINE_LOCK = threading.Lock()
 _GRAPHS: dict[str, MetroGraph] = {}
 _GRAPH_LOCK = threading.Lock()
 
+# Two families. Greedy, hill climbing and beam use the same heuristic as A* to
+# order their choices, so they are informed searches too -- just ones that give
+# up optimality for speed. One group, with the trade visible in /api/compare,
+# says that more honestly than a "heuristic" family that suggests the others
+# do without one.
 ALGORITHM_FAMILY = {
     "bfs": "blind search",
     "dfs": "blind search",
@@ -33,12 +38,12 @@ ALGORITHM_FAMILY = {
     "dls": "blind search",
     "ids": "blind search",
     "bidirectional": "blind search",
-    "greedy": "heuristic search",
-    "hill_climbing": "heuristic search",
-    "beam": "heuristic search",
-    "astar": "informed search",
-    "astar_landmark": "informed search",
-    "ida_star": "informed search",
+    "greedy": "informed (heuristic) search",
+    "hill_climbing": "informed (heuristic) search",
+    "beam": "informed (heuristic) search",
+    "astar": "informed (heuristic) search",
+    "astar_landmark": "informed (heuristic) search",
+    "ida_star": "informed (heuristic) search",
 }
 
 ALGORITHM_LABEL = {

@@ -66,11 +66,9 @@ class MetaTest(ApiTestCase):
         status, body = self.get("/api/meta")
         self.assertEqual(status, 200)
         families = {entry["id"]: entry["family"] for entry in body["algorithms"]}
-        self.assertEqual(families["astar"], "informed search")
-        self.assertEqual(families["ida_star"], "informed search")
-        self.assertEqual(families["greedy"], "heuristic search")
-        self.assertEqual(families["hill_climbing"], "heuristic search")
-        self.assertEqual(families["beam"], "heuristic search")
+        self.assertEqual(set(families.values()), {"blind search", "informed (heuristic) search"})
+        for name in ("greedy", "hill_climbing", "beam", "astar", "astar_landmark", "ida_star"):
+            self.assertEqual(families[name], "informed (heuristic) search", name)
         for name in ("bfs", "ucs", "dfs", "dls", "ids", "bidirectional"):
             self.assertEqual(families[name], "blind search", name)
         params = {entry["id"]: entry["params"] for entry in body["algorithms"]}

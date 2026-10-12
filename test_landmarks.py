@@ -423,7 +423,7 @@ class RegistrationTest(unittest.TestCase):
         for table in (engine.ALGORITHM_FAMILY, engine.ALGORITHM_LABEL):
             self.assertEqual(sorted(table), sorted(ALGORITHMS),
                              "every algorithm needs a family and a label or /api/meta 500s")
-        self.assertEqual(engine.ALGORITHM_FAMILY["astar_landmark"], "informed search")
+        self.assertEqual(engine.ALGORITHM_FAMILY["astar_landmark"], "informed (heuristic) search")
 
     def test_accepts_the_same_tracer_contract(self) -> None:
         from metro_router import Tracer

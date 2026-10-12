@@ -2,9 +2,13 @@
 
 A Classical AI project: route-finding across the Bangkok rail network with
 **blind search** (BFS, uniform-cost, DFS, depth-limited, iterative deepening,
-bidirectional), **heuristic search** (greedy best-first, hill climbing, beam) and **informed
-search** (A\*, A\* + ALT landmarks, IDA\*), plus a web visualizer that replays any search
+bidirectional) and **informed (heuristic) search** (greedy best-first, hill climbing,
+beam, A\*, A\* + ALT landmarks, IDA\*), plus a web visualizer that replays any search
 step by step and benchmarks all twelve against Dijkstra's optimum.
+
+The informed family is one group on purpose: greedy, hill climbing and beam steer
+by the same heuristic A\* does — they are informed searches that trade away
+optimality for speed, and the Compare view shows exactly what that trade costs.
 
 The engine is pure Python standard library. So is the API server. Only the
 frontend needs Node.
