@@ -34,6 +34,7 @@ export interface SearchRequest {
   goal: string;
   weights: Weights;
   beam_width: number;
+  depth_limit: number;
 }
 
 export const api = {

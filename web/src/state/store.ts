@@ -22,6 +22,7 @@ interface State {
   goal: string | null;
   weights: Weights;
   beamWidth: number;
+  depthLimit: number;
   maxEvents: number;
 
   mode: Mode;
@@ -47,6 +48,7 @@ interface State {
   setAlgorithm: (algorithm: Algorithm) => void;
   setWeights: (weights: Partial<Weights>) => void;
   setBeamWidth: (width: number) => void;
+  setDepthLimit: (limit: number) => void;
   pickStation: (id: string) => void;
   setEndpoints: (start: string | null, goal: string | null) => void;
   setMode: (mode: Mode) => void;
@@ -78,6 +80,7 @@ export const useStore = create<State>((set, get) => ({
   goal: "BL01",
   weights: { time: 1, cost: 0, transit: 0 },
   beamWidth: 5,
+  depthLimit: 30,
   maxEvents: 20000,
 
   mode: "animate",
@@ -141,6 +144,7 @@ export const useStore = create<State>((set, get) => ({
   setAlgorithm: (algorithm) => set({ algorithm }),
   setWeights: (weights) => set({ weights: { ...get().weights, ...weights } }),
   setBeamWidth: (beamWidth) => set({ beamWidth: Math.max(1, Math.round(beamWidth)) }),
+  setDepthLimit: (depthLimit) => set({ depthLimit: Math.max(0, Math.round(depthLimit)) }),
 
   pickStation(id) {
     const { start, goal, stationsById } = get();
@@ -153,14 +157,14 @@ export const useStore = create<State>((set, get) => ({
   setMode: (mode) => set({ mode }),
 
   async run() {
-    const { scenario, algorithm, start, goal, weights, beamWidth, maxEvents } = get();
+    const { scenario, algorithm, start, goal, weights, beamWidth, depthLimit, maxEvents } = get();
     if (!start || !goal) return;
     set({ running: true, error: null, playing: false });
     try {
       const [trace, heuristic] = await Promise.all([
         api.trace({
           scenario, algorithm, start, goal, weights,
-          beam_width: beamWidth, trace: { max_events: maxEvents },
+          beam_width: beamWidth, depth_limit: depthLimit, trace: { max_events: maxEvents },
         }),
         api.heuristic(scenario, goal),
       ]);
@@ -178,12 +182,12 @@ export const useStore = create<State>((set, get) => ({
   },
 
   async runCompare() {
-    const { scenario, start, goal, weights, beamWidth } = get();
+    const { scenario, start, goal, weights, beamWidth, depthLimit } = get();
     if (!start || !goal) return;
     set({ running: true, error: null });
     try {
       const compare = await api.compare({
-        scenario, start, goal, weights, beam_width: beamWidth, repeats: 5,
+        scenario, start, goal, weights, beam_width: beamWidth, depth_limit: depthLimit, repeats: 5,
       });
       set({ compare, running: false });
     } catch (error) {

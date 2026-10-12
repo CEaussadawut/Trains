@@ -1,7 +1,10 @@
 export type Node = [string, string]; // [station_id, line_id]
 
 export type Scenario = "operating" | "under_construction" | "planned";
-export type Algorithm = "greedy" | "hill_climbing" | "beam" | "astar" | "ida_star";
+export type Algorithm =
+  | "bfs" | "dfs" | "ucs" | "dls" | "ids" | "bidirectional"
+  | "greedy" | "hill_climbing" | "beam"
+  | "astar" | "ida_star";
 
 export interface Station {
   id: string;

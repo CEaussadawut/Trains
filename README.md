@@ -1,9 +1,10 @@
 # Bangkok Metro Search — Thailand Commute
 
 A Classical AI project: route-finding across the Bangkok rail network with
-**heuristic search** (greedy best-first, hill climbing, beam) and **informed
+**blind search** (BFS, uniform-cost, DFS, depth-limited, iterative deepening,
+bidirectional), **heuristic search** (greedy best-first, hill climbing, beam) and **informed
 search** (A\*, IDA\*), plus a web visualizer that replays any search step by step
-and benchmarks all five against Dijkstra's optimum.
+and benchmarks all eleven against Dijkstra's optimum.
 
 The engine is pure Python standard library. So is the API server. Only the
 frontend needs Node.
@@ -28,6 +29,26 @@ Most Bangkok interchanges are two *separate* stations joined by a walk, not one
 station on two lines — only six stations serve multiple lines. The itinerary
 builder handles both.
 
+### What "optimal" means for each blind search
+
+| Algorithm | Guarantee | Notes |
+|---|---|---|
+| BFS | fewest **hops** | Goal-tested when generated (AIMA early goal test), so the goal layer is never expanded |
+| Iterative deepening | fewest **hops** | Re-expands the shallow levels each round |
+| Bidirectional | fewest **hops** | Expands whole layers from the smaller side, then picks the shallowest meeting |
+| Uniform-cost | least **weighted cost** | With the default `Weights(time=1)` that is the fastest route, matching Dijkstra |
+| DFS / depth-limited | none | Any route; DLS only within `depth_limit` hops |
+
+A hop is any edge, **transfers included**, so a hop-optimal route can be
+minutes slower than the fastest one. Only uniform-cost (and A\*/IDA\*) optimise time.
+
+Uniform-cost prices fares exactly as `fare_for` does: the base fare is charged
+on each operator segment's first hop and the `max_fare` cap applies. Because
+that cost depends on the segment so far, UCS searches over (node, segment hops)
+states whenever `cost` has a weight. The informed searches still use the
+per-edge approximation (`per_station` per hop, `base_fare` on a cross-operator
+transfer).
+
 ---
 
 ## Running it
@@ -37,13 +58,14 @@ builder handles both.
 ```bash
 python3 metro_router.py N24 BL01 --algorithm astar
 python3 metro_router.py N24 BL01 --algorithm greedy --weight-transit 900
+python3 metro_router.py N24 BL01 --algorithm dls --depth-limit 25
 python3 bench_informed.py --scenario operating --out bench.md
 ```
 
 ### Tests
 
 ```bash
-python3 -m unittest discover -p 'test_*.py'      # 75 tests
+python3 -m unittest discover -p 'test_*.py'
 ```
 
 - `test_metro_router.py` — the engine: heuristic admissibility and consistency

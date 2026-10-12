@@ -10,13 +10,21 @@ from metro_router import (
     NoRouteFoundError,
     Route,
     StationNotActiveError,
+    Tracer,
     Weights,
+    _fare_step,
     astar_search,
     beam_search,
+    bidirectional_search,
+    breadth_first_search,
+    depth_first_search,
+    depth_limited_search,
     greedy_best_first_search,
     hill_climbing_search,
     ida_star_search,
+    iterative_deepening_search,
     optimal_duration,
+    uniform_cost_search,
 )
 
 TOLERANCE = 1e-6
@@ -224,6 +232,180 @@ class WeightsTest(unittest.TestCase):
         for start_id, goal_id in sample_pairs(graph, 20, seed=6):
             route = astar_search(graph, start_id, goal_id, weights=Weights(time=2.5), trace_memory=False)
             self.assertAlmostEqual(route.duration_sec, optimal_duration(graph, start_id, goal_id), delta=TOLERANCE)
+
+
+BLIND_SEARCHES = (
+    breadth_first_search,
+    uniform_cost_search,
+    depth_first_search,
+    depth_limited_search,
+    iterative_deepening_search,
+    bidirectional_search,
+)
+
+
+class BlindSearchTest(unittest.TestCase):
+    def test_blind_searches_never_consult_the_heuristic(self) -> None:
+        graph = MetroGraph(scenario="operating")
+
+        def forbidden(*_args: object) -> float:
+            raise AssertionError("a blind search called the heuristic")
+
+        graph.heuristic = forbidden  # type: ignore[method-assign]
+        for search in BLIND_SEARCHES:
+            search(graph, "N24", "BL01", trace_memory=False)
+
+    def test_ucs_matches_the_dijkstra_reference(self) -> None:
+        for scenario, graph in GRAPHS.items():
+            for start_id, goal_id in sample_pairs(graph, 40, seed=7):
+                route = uniform_cost_search(graph, start_id, goal_id, trace_memory=False)
+                self.assertAlmostEqual(
+                    route.duration_sec, optimal_duration(graph, start_id, goal_id),
+                    delta=TOLERANCE, msg=f"{scenario} {start_id}->{goal_id}",
+                )
+
+    def test_bfs_finds_the_fewest_hops(self) -> None:
+        graph = GRAPHS["operating"]
+        for start_id, goal_id in sample_pairs(graph, 30, seed=8):
+            bfs = breadth_first_search(graph, start_id, goal_id, trace_memory=False)
+            for name, search in ALGORITHMS.items():
+                try:
+                    other = search(graph, start_id, goal_id, trace_memory=False)
+                except NoRouteFoundError:
+                    continue
+                self.assertLessEqual(bfs.hops, other.hops, f"{name} {start_id}->{goal_id}")
+
+    def test_the_heuristic_saves_work_over_ucs(self) -> None:
+        graph = GRAPHS["operating"]
+        for start_id, goal_id in sample_pairs(graph, 30, seed=9):
+            ucs = uniform_cost_search(graph, start_id, goal_id, trace_memory=False)
+            astar = astar_search(graph, start_id, goal_id, trace_memory=False)
+            self.assertLessEqual(astar.nodes_expanded, ucs.nodes_expanded, f"{start_id}->{goal_id}")
+
+    def test_ids_and_bidirectional_match_bfs_on_hops(self) -> None:
+        for scenario, graph in GRAPHS.items():
+            for start_id, goal_id in sample_pairs(graph, 25, seed=11):
+                bfs = breadth_first_search(graph, start_id, goal_id, trace_memory=False)
+                ids = iterative_deepening_search(graph, start_id, goal_id, trace_memory=False)
+                both = bidirectional_search(graph, start_id, goal_id, trace_memory=False)
+                label = f"{scenario} {start_id}->{goal_id}"
+                self.assertEqual(ids.hops, bfs.hops, label)
+                self.assertEqual(both.hops, bfs.hops, label)
+
+    def test_ids_re_expands_the_shallow_levels(self) -> None:
+        graph = GRAPHS["operating"]
+        bfs = breadth_first_search(graph, "N24", "BL01", trace_memory=False)
+        ids = iterative_deepening_search(graph, "N24", "BL01", trace_memory=False)
+        self.assertGreater(ids.nodes_expanded, bfs.nodes_expanded)
+
+    def test_bidirectional_expands_fewer_nodes_than_bfs(self) -> None:
+        graph = GRAPHS["operating"]
+        cheaper = 0
+        pairs = sample_pairs(graph, 30, seed=12)
+        for start_id, goal_id in pairs:
+            bfs = breadth_first_search(graph, start_id, goal_id, trace_memory=False)
+            both = bidirectional_search(graph, start_id, goal_id, trace_memory=False)
+            cheaper += both.nodes_expanded < bfs.nodes_expanded
+        self.assertGreater(cheaper, len(pairs) // 2)
+
+    def test_dls_fails_past_its_limit_and_succeeds_within_it(self) -> None:
+        graph = GRAPHS["operating"]
+        hops = breadth_first_search(graph, "N24", "E23", trace_memory=False).hops
+        self.assertGreater(hops, 30)
+        with self.assertRaisesRegex(NoRouteFoundError, "depth limit"):
+            depth_limited_search(graph, "N24", "E23", depth_limit=hops - 1, trace_memory=False)
+        route = depth_limited_search(graph, "N24", "E23", depth_limit=hops, trace_memory=False)
+        self.assertEqual(route.hops, hops)
+
+    def test_dls_never_exceeds_its_limit(self) -> None:
+        graph = GRAPHS["operating"]
+        for start_id, goal_id in sample_pairs(graph, 30, seed=13):
+            for limit in (5, 15, 30):
+                try:
+                    route = depth_limited_search(graph, start_id, goal_id, depth_limit=limit, trace_memory=False)
+                except NoRouteFoundError:
+                    continue
+                self.assertLessEqual(route.hops, limit)
+
+    def test_negative_depth_limit_is_rejected(self) -> None:
+        with self.assertRaises(ValueError):
+            depth_limited_search(GRAPHS["operating"], "CEN", "E4", depth_limit=-1)
+
+    def test_dfs_is_complete_but_not_optimal(self) -> None:
+        graph = GRAPHS["operating"]
+        slower = 0
+        for start_id, goal_id in sample_pairs(graph, 30, seed=10):
+            route = depth_first_search(graph, start_id, goal_id, trace_memory=False)
+            if route.duration_sec > optimal_duration(graph, start_id, goal_id) + TOLERANCE:
+                slower += 1
+        self.assertGreater(slower, 0)
+
+    def test_blind_routes_are_real_walks_in_every_scenario(self) -> None:
+        for scenario, graph in GRAPHS.items():
+            for start_id, goal_id in sample_pairs(graph, 25, seed=14):
+                for search in BLIND_SEARCHES:
+                    label = f"{search.__name__} {scenario} {start_id}->{goal_id}"
+                    try:
+                        route = search(graph, start_id, goal_id, trace_memory=False)
+                    except NoRouteFoundError:
+                        self.assertIs(search, depth_limited_search, label)
+                        continue
+                    self.assertEqual(route.path[0][0], start_id, label)
+                    self.assertEqual(route.path[-1][0], goal_id, label)
+                    self.assertEqual(len(set(route.path)), len(route.path), label)
+                    for node, neighbor in zip(route.path, route.path[1:]):
+                        self.assertIn(neighbor, [other for other, _c, _k in graph.neighbors(node)], label)
+                    self.assertAlmostEqual(walk_duration(graph, route), route.duration_sec, delta=TOLERANCE)
+
+    def test_bfs_goal_tests_on_generation(self) -> None:
+        graph = GRAPHS["operating"]
+        for start_id, goal_id in sample_pairs(graph, 20, seed=15):
+            tracer = Tracer(max_events=10**7)
+            route = breadth_first_search(graph, start_id, goal_id, trace_memory=False, tracer=tracer)
+            expanded = [event.payload["node"] for event in tracer.events if event.kind == "expand"]
+            self.assertNotIn(goal_id, [node[0] for node in expanded], f"{start_id}->{goal_id}")
+            self.assertEqual(route.path[-2], expanded[-1], f"{start_id}->{goal_id}")
+
+
+class FareAwareUcsTest(unittest.TestCase):
+    def test_fare_steps_sum_to_fare_for(self) -> None:
+        for scenario, graph in GRAPHS.items():
+            rng = random.Random(16)
+            stations = active_stations(graph)
+            for _ in range(500):
+                path = [rng.choice(graph.start_nodes(rng.choice(stations)))]
+                segment_hops, total = 0, 0.0
+                for _ in range(rng.randint(0, 60)):
+                    neighbor, _cost, kind = rng.choice(graph.neighbors(path[-1]))
+                    added, segment_hops = _fare_step(graph, path[-1], neighbor, kind, segment_hops)
+                    total += added
+                    path.append(neighbor)
+                self.assertAlmostEqual(total, graph.fare_for(path), delta=TOLERANCE, msg=f"{scenario} {path}")
+
+    def test_cost_only_ucs_finds_the_cheapest_fare(self) -> None:
+        cheapest = Weights(time=0.0, cost=1.0)
+        for scenario, graph in GRAPHS.items():
+            for start_id, goal_id in sample_pairs(graph, 20, seed=17):
+                ucs = uniform_cost_search(graph, start_id, goal_id, weights=cheapest, trace_memory=False)
+                rivals = [
+                    uniform_cost_search(graph, start_id, goal_id, trace_memory=False),
+                    breadth_first_search(graph, start_id, goal_id, trace_memory=False),
+                    bidirectional_search(graph, start_id, goal_id, trace_memory=False),
+                    astar_search(graph, start_id, goal_id, weights=Weights(time=1e-6, cost=1.0), trace_memory=False),
+                ]
+                for rival in rivals:
+                    self.assertLessEqual(ucs.fare_thb, rival.fare_thb + TOLERANCE, f"{scenario} {start_id}->{goal_id}")
+
+    def test_the_first_operator_base_fare_counts(self) -> None:
+        """The old per-edge model skipped the first base fare and the cap, so it could pick a pricier route."""
+        graph = GRAPHS["planned"]
+        cheapest = Weights(time=0.0, cost=1.0)
+        beaten = 0
+        for start_id, goal_id in sample_pairs(graph, 40, seed=18):
+            ucs = uniform_cost_search(graph, start_id, goal_id, weights=cheapest, trace_memory=False)
+            per_edge = astar_search(graph, start_id, goal_id, weights=Weights(time=1e-6, cost=1.0), trace_memory=False)
+            beaten += ucs.fare_thb < per_edge.fare_thb - TOLERANCE
+        self.assertGreater(beaten, 0)
 
 
 class GraphTest(unittest.TestCase):

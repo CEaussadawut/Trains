@@ -7,12 +7,14 @@ from pathlib import Path
 
 from metro_router import (
     ALGORITHMS,
+    DEFAULT_DEPTH_LIMIT,
     SCENARIOS,
     MetroGraph,
     NoRouteFoundError,
     Route,
     Weights,
     optimal_duration,
+    search_kwargs,
 )
 
 BENCHMARK_PAIRS = [
@@ -103,29 +105,33 @@ def summary_table(rows: list[Measurement], algorithms: list[str], pairs: int) ->
         if not solved:
             lines.append(f"| {algorithm} | 0/{pairs} | - | - | - | - | - | - |")
             continue
+        routes = [row.route for row in solved if row.route is not None]
         worst = max(row.excess_pct for row in solved)
         lines.append(
             f"| {algorithm} | {len(solved)}/{pairs} | {sum(1 for row in solved if row.optimal)}/{len(solved)} | "
-            f"{sum(row.route.nodes_expanded for row in solved)} | "
-            f"{sum(row.route.nodes_generated for row in solved)} | "
+            f"{sum(route.nodes_expanded for route in routes)} | "
+            f"{sum(route.nodes_generated for route in routes)} | "
             f"{'optimal' if worst <= 0.0 else f'+{worst:.1f}%'} | "
             f"{sum(row.median_ms for row in solved):.3f} | "
-            f"{max(row.route.peak_memory_bytes for row in solved) / 1024:.1f} |"
+            f"{max(route.peak_memory_bytes for route in routes) / 1024:.1f} |"
         )
     return "\n".join(lines)
 
 
-def report(graph: MetroGraph, algorithms: list[str], weights: Weights, repeats: int, beam_width: int) -> str:
+def report(
+    graph: MetroGraph, algorithms: list[str], weights: Weights, repeats: int, beam_width: int,
+    depth_limit: int = DEFAULT_DEPTH_LIMIT,
+) -> str:
     rows = []
     for algorithm in algorithms:
-        kwargs = {"beam_width": beam_width} if algorithm == "beam" else {}
+        kwargs = search_kwargs(algorithm, beam_width=beam_width, depth_limit=depth_limit)
         for start_id, goal_id in BENCHMARK_PAIRS:
             rows.append(measure(graph, algorithm, start_id, goal_id, weights, repeats, **kwargs))
 
     return "\n\n".join([
         f"# Informed search benchmark — {graph.scenario}",
         f"{len(graph.stations)} stations, {graph.num_nodes} nodes, {graph.num_rail_edges} rail edges, "
-        f"{len(BENCHMARK_PAIRS)} pairs, median of {repeats} runs, beam width {beam_width}",
+        f"{len(BENCHMARK_PAIRS)} pairs, median of {repeats} runs, beam width {beam_width}, depth limit {depth_limit}",
         "## Totals",
         summary_table(rows, algorithms, len(BENCHMARK_PAIRS)),
         "## Per pair",
@@ -142,6 +148,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--algorithm", action="append", choices=sorted(ALGORITHMS), default=None)
     parser.add_argument("--repeats", type=int, default=REPEATS)
     parser.add_argument("--beam-width", type=int, default=5)
+    parser.add_argument("--depth-limit", type=int, default=DEFAULT_DEPTH_LIMIT)
     parser.add_argument("--weight-time", type=float, default=1.0)
     parser.add_argument("--weight-cost", type=float, default=0.0)
     parser.add_argument("--weight-transit", type=float, default=0.0)
@@ -154,7 +161,7 @@ def main(argv: list[str] | None = None) -> int:
     graph = MetroGraph(scenario=args.scenario)
     algorithms = args.algorithm or sorted(ALGORITHMS)
     weights = Weights(time=args.weight_time, cost=args.weight_cost, transit=args.weight_transit)
-    text = report(graph, algorithms, weights, args.repeats, args.beam_width)
+    text = report(graph, algorithms, weights, args.repeats, args.beam_width, args.depth_limit)
 
     if args.out is not None:
         args.out.write_text(text + "\n", encoding="utf-8")
