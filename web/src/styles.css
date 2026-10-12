@@ -29,6 +29,9 @@
   --pruned: #c22f2f;
   --stuck: #c22f2f;
   --heuristic: #2a78d6;
+  /* the two routes of one ALT landmark step (A − B) */
+  --calc-a: #eb6834;
+  --calc-b: #2a78d6;
   --transfer: #8a8880;
   --route-casing: #ffffff;
 
@@ -275,6 +278,24 @@ button.primary:disabled { background: var(--surface-2); color: var(--muted); cur
 .key-landmark { width: 10px; height: 10px; border: 1.5px solid var(--ink); background: var(--surface-1);
                 transform: rotate(45deg); display: inline-block; margin: 0 2px; }
 .alt-note b { font-weight: 700; }
+
+/* ALT: step-by-step calculation of h */
+.calc-start { margin: 6px 0 10px; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border);
+              background: var(--surface-1); color: var(--ink); cursor: pointer; font-weight: 600; }
+.calc-start:hover:not(:disabled) { background: var(--surface-2); }
+.calc { margin: 6px 0 12px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px;
+        background: var(--surface-1); }
+.calc-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.calc-controls { display: flex; gap: 4px; }
+.calc-controls button { min-width: 28px; height: 26px; border-radius: 6px; border: 1px solid var(--border);
+                        background: var(--surface-1); cursor: pointer; color: var(--ink); }
+.calc-controls button:disabled { opacity: 0.35; cursor: default; }
+.calc-why b, .calc-result b { font-weight: 700; }
+.calc-a { color: var(--calc-a); font-weight: 600; }
+.calc-b { color: var(--calc-b); font-weight: 600; }
+.calc-table tr.calc-current td { background: var(--surface-2); }
+.calc-table tr.calc-best td:last-child { font-weight: 700; }
+.calc-table tr.calc-best td:last-child::after { content: " ◀ max"; color: var(--muted); font-weight: 400; font-size: 11px; }
 .key-route { width: 14px; height: 5px; border-radius: 3px; background: var(--ink); flex: none; }
 
 /* ---- playback ---- */

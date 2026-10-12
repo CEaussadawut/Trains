@@ -135,11 +135,23 @@ export function MetroMap() {
     () => (heuristic?.kind === "landmark" ? (heuristic.landmarks ?? []).map(([id]) => id) : []),
     [heuristic],
   );
+  // The h calculation, when one is animating for the node on screen: the step
+  // being shown (or the winning one once it has finished).
+  const calc = useStore((s) => s.calc);
+  const calcStep = useStore((s) => s.calcStep);
+  const calcShown = useMemo(() => {
+    if (!calc || !visual?.current) return null;
+    if (calc.node[0] !== visual.current[0] || calc.node[1] !== visual.current[1]) return null;
+    const index = calcStep < calc.steps.length ? calcStep : calc.best;
+    return index === null ? null : calc.steps[index];
+  }, [calc, calcStep, visual]);
+
   const activeLandmark = useMemo(() => {
+    if (calcShown) return calcShown.landmark[0];
     if (!visual?.current || heuristic?.kind !== "landmark") return null;
     const entry = heuristic.explain?.[`${visual.current[0]}|${visual.current[1]}`];
     return entry?.source === "landmark" && entry.landmark ? entry.landmark[0] : null;
-  }, [visual, heuristic]);
+  }, [visual, heuristic, calcShown]);
 
   const pathEdges = useMemo(() => {
     const path = visual?.finalPath;
@@ -335,6 +347,28 @@ export function MetroMap() {
                     strokeDasharray={segment.transfer ? `${dash} ${dash}` : undefined} />
                 );
               })}
+            </g>
+          )}
+
+          {/* The two routes of the landmark step being shown: B (blue) as a wide
+              band underneath, A (orange) on top, so where A runs along B the
+              shared part of the triangle is visible as orange inside blue. */}
+          {calcShown && (
+            <g className="layer-calc" pointerEvents="none">
+              {([["second_path", "var(--calc-b)", 15, 0.38], ["first_path", "var(--calc-a)", 6, 0.95]] as const)
+                .map(([key, color, width, opacity]) => {
+                  const path = calcShown[key];
+                  return path.slice(0, -1).map((id, index) => {
+                    const a = positions.get(id);
+                    const b = positions.get(path[index + 1]);
+                    if (!a || !b) return null;
+                    return (
+                      <line key={`${key}-${index}`} x1={a.x} y1={a.y} x2={b.x} y2={b.y}
+                        stroke={color} strokeWidth={width * strokeScale} strokeLinecap="round"
+                        opacity={opacity} />
+                    );
+                  });
+                })}
             </g>
           )}
 

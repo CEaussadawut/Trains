@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useStore } from "../state/store";
 import type { VisualState } from "../map/replay";
 
@@ -57,6 +57,124 @@ export function FrontierPanel({ visual }: { visual: VisualState | null }) {
         <p className="panel-note warn-text">
           Pruned this round: {visual.beamDropped.length} of {visual.beamDropped.length + rows.length}
           {" "}candidates discarded and never revisited.
+        </p>
+      )}
+    </div>
+  );
+}
+
+// How long each landmark stays on screen while the calculation plays.
+const CALC_STEP_MS = 1800;
+
+/** A* + ALT: computes h(node) one landmark at a time. Each step draws two real
+ *  routes on the map (orange A, blue B) and subtracts their lengths; the
+ *  running maximum is h. The two colours match the map. */
+function LandmarkCalc({ node }: { node: [string, string] }) {
+  const stations = useStore((s) => s.stationsById);
+  const calc = useStore((s) => s.calc);
+  const step = useStore((s) => s.calcStep);
+  const playing = useStore((s) => s.calcPlaying);
+  const loading = useStore((s) => s.calcLoading);
+  const startCalc = useStore((s) => s.startCalc);
+  const setCalcStep = useStore((s) => s.setCalcStep);
+  const setCalcPlaying = useStore((s) => s.setCalcPlaying);
+  const stopCalc = useStore((s) => s.stopCalc);
+  const nameOf = (id: string) => stations.get(id)?.name_en ?? id;
+
+  const active = !!calc && calc.node[0] === node[0] && calc.node[1] === node[1];
+
+  useEffect(() => {
+    if (!active || !playing || !calc) return;
+    if (step >= calc.steps.length) {
+      setCalcPlaying(false);
+      return;
+    }
+    const timer = window.setTimeout(() => setCalcStep(step + 1), CALC_STEP_MS);
+    return () => window.clearTimeout(timer);
+  }, [active, playing, step, calc, setCalcStep, setCalcPlaying]);
+
+  if (!active || !calc) {
+    return (
+      <button className="calc-start" onClick={() => startCalc(node)} disabled={loading}>
+        {loading ? "Loading…" : "▶ Animate how h is calculated"}
+      </button>
+    );
+  }
+
+  const done = step >= calc.steps.length;
+  const shown = calc.steps.slice(0, done ? calc.steps.length : step + 1);
+  let bestSoFar = -1;
+  shown.forEach((entry, index) => {
+    if (bestSoFar < 0 || entry.bound > shown[bestSoFar].bound) bestSoFar = index;
+  });
+  const current = done ? null : calc.steps[step];
+  const L = current ? nameOf(current.landmark[0]) : "";
+
+  return (
+    <div className="calc">
+      <div className="calc-head">
+        <b>{done ? "Result" : `Landmark ${step + 1} of ${calc.steps.length}`}</b>
+        <span className="calc-controls">
+          <button title="Previous landmark" disabled={step === 0}
+            onClick={() => { setCalcPlaying(false); setCalcStep(step - 1); }}>‹</button>
+          <button title={playing ? "Pause" : "Play"} onClick={() => setCalcPlaying(!playing)}>
+            {playing ? "❚❚" : "▶"}</button>
+          <button title="Next landmark" disabled={done}
+            onClick={() => { setCalcPlaying(false); setCalcStep(step + 1); }}>›</button>
+          <button title="Close" onClick={stopCalc}>✕</button>
+        </span>
+      </div>
+
+      {current && (
+        <p className="panel-note calc-why">
+          {current.via === "beyond_goal" ? (
+            <><b>{L}</b> lies beyond the goal. The route <span className="calc-a">here → {L}</span>{" "}
+              (A) is no longer than the rest of the trip plus{" "}
+              <span className="calc-b">goal → {L}</span> (B), so the rest of the trip is at
+              least <b>A − B</b>.</>
+          ) : (
+            <><b>{L}</b> lies behind you. The route <span className="calc-a">{L} → goal</span>{" "}
+              (A) is no longer than <span className="calc-b">{L} → here</span> (B) plus the
+              rest of the trip, so the rest of the trip is at least <b>A − B</b>.</>
+          )}
+        </p>
+      )}
+
+      <table className="grid calc-table">
+        <thead>
+          <tr><th>Landmark</th><th className="num">A</th><th className="num">B</th>
+            <th className="num">A − B</th></tr>
+        </thead>
+        <tbody>
+          {shown.map((entry, index) => (
+            <tr key={index} className={[
+              !done && index === step ? "calc-current" : "",
+              index === bestSoFar && entry.bound > 0 ? "calc-best" : "",
+              entry.bound <= 0 ? "stale" : "",
+            ].join(" ")}>
+              <td>{nameOf(entry.landmark[0])}
+                <small className="dim"> · {entry.via === "beyond_goal" ? "beyond goal" : "behind you"}</small></td>
+              <td className="num calc-a">{mins(entry.first)}</td>
+              <td className="num calc-b">{mins(entry.second)}</td>
+              <td className="num">{mins(entry.bound)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      {done ? (
+        <p className="panel-note calc-result">
+          h = max(best landmark {calc.best !== null ? mins(calc.steps[calc.best].bound) : "—"},
+          straight line {mins(calc.straight_line)}) = <b>{mins(calc.h)} min</b>
+          {calc.source === "landmark" && calc.best !== null
+            ? <> — from <b>{nameOf(calc.steps[calc.best].landmark[0])}</b>.</>
+            : calc.source === "goal" ? <> — this is the goal.</> : <> — the straight line wins here.</>}
+        </p>
+      ) : (
+        <p className="panel-note">
+          Largest so far: <b>{mins(shown[bestSoFar].bound)} min</b>
+          {shown[bestSoFar].bound > 0 && <> ({nameOf(shown[bestSoFar].landmark[0])})</>}
+          {" "}· a negative A − B means that landmark tells us nothing here.
         </p>
       )}
     </div>
@@ -129,6 +247,10 @@ export function NodeInspector({ visual }: { visual: VisualState | null }) {
               to the goal no landmark gives a larger one.</>
           )}
         </p>
+      )}
+
+      {usesLandmarks && heuristic?.kind === "landmark" && (
+        <LandmarkCalc node={visual.current} />
       )}
 
       {visual.threshold !== null && (

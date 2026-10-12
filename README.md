@@ -300,6 +300,15 @@ arithmetic behind h, e.g. on Khu Khot → Tha Phra at Phahon Yothin 59:
 > h from landmark **Lak Song** — it lies beyond the goal:
 > here → Lak Song 78.0 − goal → Lak Song 17.6 = **60.4 min** · straight line would say 29.1
 
+**▶ Animate how h is calculated** (in the Current node tab) replays that
+calculation one landmark at a time. For each landmark the map draws the two real
+shortest routes whose lengths are subtracted — A in orange, B as a blue band
+underneath — and the table adds a row with A − B and marks the running maximum.
+The last step compares the best landmark with the straight-line bound. For Lak
+Song the orange route visibly runs *through* Tha Phra on its way out to Lak Song,
+on top of the blue goal → Lak Song band: that overlap is the triangle inequality
+holding with equality, which is why h is exact there.
+
 f then stays at 76.7 min — the true trip time — for every station on the route,
 which is why ALT expands exactly the 31 stations of the route and nothing else
 (plain A\* expands 103). "Shade by h(n) to goal" and the h/h\* note always show
@@ -360,6 +369,7 @@ datasets/             5 CSVs — see datasets/README.md
 |---|---|
 | `GET /api/meta` | algorithms grouped by family, scenarios, defaults |
 | `GET /api/network?scenario=` | all 302 stations and 289 edges, each flagged active |
+| `GET /api/landmark_calc?scenario=&goal=&station=&line=&w_time=&w_cost=&w_transit=` | the ALT calculation of h for one node: per landmark, A, B, A − B and both routes |
 | `GET /api/heuristic?scenario=&goal=&algorithm=&w_time=&w_cost=&w_transit=` | h(n) per station as `algorithm` computes it; for `astar_landmark` also the landmarks and, per node, which landmark gave h and from which two distances |
 | `POST /api/search` | one route |
 | `POST /api/trace` | one route plus its full replay |

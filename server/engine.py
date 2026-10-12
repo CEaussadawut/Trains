@@ -214,10 +214,53 @@ def heuristic_view(graph: MetroGraph, goal_id: str, algorithm: str = "astar",
     }
 
 
+def landmark_calculation(graph: MetroGraph, goal_id: str, node: tuple[str, str],
+                         weights: Weights = Weights()) -> dict[str, Any]:
+    """The ALT calculation of h(node), one landmark at a time, with routes.
+
+    This is what the visualizer animates: for each landmark, the two shortest
+    routes whose lengths are subtracted (drawn on the map), the difference, and
+    the running maximum; then the straight-line bound it is compared against.
+    Routes are station ids with same-station platform changes collapsed, since
+    the map draws stations, not platforms.
+    """
+    if node not in graph.adjacency:
+        raise BadRequest(f"unknown node {list(node)!r}")
+    bound = landmarks.GoalBound.build(graph.landmark_table(weights), graph.start_nodes(goal_id))
+
+    def stations(path: list) -> list[str]:
+        out: list[str] = []
+        for station_id, _line in path:
+            if not out or out[-1] != station_id:
+                out.append(station_id)
+        return out
+
+    steps = []
+    for step in bound.breakdown(node):
+        steps.append({
+            "landmark": list(step["landmark"]), "via": step["via"],
+            "first": step["first"], "second": step["second"], "bound": step["bound"],
+            "first_path": stations(step["first_path"]),
+            "second_path": stations(step["second_path"]),
+        })
+    straight = weights.time * graph.heuristic(node, goal_id)
+    best_index = max(range(len(steps)), key=lambda i: steps[i]["bound"], default=None)
+    best_bound = steps[best_index]["bound"] if best_index is not None else 0.0
+    h = max(best_bound, straight, 0.0)
+    source = ("landmark" if best_bound > 0.0 and best_bound >= straight
+              else "straight_line" if straight > 0.0 else "goal")
+    return {
+        "node": list(node), "goal": goal_id, "steps": steps,
+        "best": best_index if source == "landmark" else None,
+        "straight_line": straight, "h": h, "source": source,
+    }
+
+
 __all__ = [
     "ALGORITHM_FAMILY", "ALGORITHM_LABEL", "BadRequest", "NoRouteFoundError",
     "StationNotActiveError", "Tracer", "build_weights", "get_graph",
-    "heuristic_by_station", "heuristic_view", "reference_duration", "run_search", "warm_up",
+    "heuristic_by_station", "heuristic_view", "landmark_calculation", "reference_duration",
+    "run_search", "warm_up",
 ]
 
 

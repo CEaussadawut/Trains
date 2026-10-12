@@ -57,13 +57,19 @@ DEFAULT_LANDMARKS = 6
 
 
 def dijkstra(adjacency: Adjacency, sources: Iterable[Node], cost_fn: CostFn,
-             reverse: bool = False) -> dict[Node, float]:
+             reverse: bool = False,
+             parents: dict[Node, Node] | None = None) -> dict[Node, float]:
     """Shortest weighted distance from `sources` to every reachable node.
 
     `reverse=True` walks the arcs backwards, giving distance *to* `sources`
     instead — note the cost is still looked up in the arc's original direction
     (`cost_fn(u, v, ...)` for the arc u -> v), which is the whole point: on a
     directed graph the reverse search must pay the forward price.
+
+    If `parents` is given it is filled with the shortest-path tree: forward,
+    parents[v] is the node before v on the way from the source; reverse, it is
+    the node after v on the way *to* the source. Either way, following parents
+    from v walks back to the source.
     """
     dist: dict[Node, float] = {}
     heap: list[tuple[float, int, Node]] = []
@@ -87,9 +93,19 @@ def dijkstra(adjacency: Adjacency, sources: Iterable[Node], cost_fn: CostFn,
             nd = d + step
             if nd < dist.get(v, math.inf):
                 dist[v] = nd
+                if parents is not None:
+                    parents[v] = u
                 order += 1
                 heapq.heappush(heap, (nd, order, v))
     return dist
+
+
+def walk(parents: dict[Node, Node], start: Node) -> list[Node]:
+    """Follow a parents map from `start` back to the tree's root."""
+    path = [start]
+    while path[-1] in parents:
+        path.append(parents[path[-1]])
+    return path
 
 
 @dataclass(frozen=True)
@@ -104,6 +120,9 @@ class LandmarkTable:
     dist_from: tuple[dict[Node, float], ...]   # dist_from[i][v] = d(L_i, v)
     dist_to: tuple[dict[Node, float], ...]     # dist_to[i][v]   = d(v, L_i)
     symmetric: bool = True                     # the two tables agree everywhere
+    # shortest-path trees, so a UI can draw the routes behind each distance
+    parent_from: tuple[dict[Node, Node], ...] = ()   # walk(..., v) = v .. L_i (reversed L_i -> v)
+    parent_to: tuple[dict[Node, Node], ...] = ()     # walk(..., v) = v .. L_i
 
     def __len__(self) -> int:
         return len(self.landmarks)
@@ -131,6 +150,9 @@ class GoalBound:
     to_goal_max: tuple[float, ...]
     from_goal_min: tuple[float, ...]
     usable: tuple[int, ...] = field(default=())
+    # the goal platform behind each extremum, so its route can be drawn
+    to_goal_arg: tuple[Node | None, ...] = field(default=())
+    from_goal_arg: tuple[Node | None, ...] = field(default=())
 
     @classmethod
     def build(cls, table: LandmarkTable, goal_nodes: Sequence[Node]) -> GoalBound:
@@ -141,8 +163,12 @@ class GoalBound:
             # bug, so say so rather than returning a silently useless bound.
             raise ValueError("goal_nodes must not be empty")
         to_goal_max, from_goal_min, usable = [], [], []
+        to_arg: list[Node | None] = []
+        from_arg: list[Node | None] = []
         for i in range(len(table)):
             d_to, d_from = table.dist_to[i], table.dist_from[i]
+            to_arg.append(max((g for g in goal_nodes if g in d_to), key=d_to.get, default=None))
+            from_arg.append(min((g for g in goal_nodes if g in d_from), key=d_from.get, default=None))
             # A goal node the landmark cannot reach (or be reached from) makes
             # that landmark's bound unusable for this query rather than wrong:
             # an unreachable goal node could be the cheap one.
@@ -154,7 +180,8 @@ class GoalBound:
             from_goal_min.append(min(reach_from) if ok_from else -math.inf)
             if ok_to or ok_from:
                 usable.append(i)
-        return cls(table, tuple(to_goal_max), tuple(from_goal_min), tuple(usable))
+        return cls(table, tuple(to_goal_max), tuple(from_goal_min), tuple(usable),
+                   tuple(to_arg), tuple(from_arg))
 
     def explain(self, node: Node) -> dict | None:
         """Which landmark produced `self(node)`, and from which two distances.
@@ -186,6 +213,48 @@ class GoalBound:
                     best = {"landmark": table.landmarks[i], "via": "behind_you",
                             "first": self.from_goal_min[i], "second": d_from, "bound": value}
         return best
+
+    def breakdown(self, node: Node) -> list[dict]:
+        """Every landmark's contribution to h(node), in landmark order -- the
+        steps of the calculation the visualizer animates.
+
+        Per landmark, the better of its two triangle inequalities (see
+        `explain`), its value (which may be <= 0: that landmark says nothing
+        useful here), and the two shortest routes whose lengths are subtracted,
+        so the triangle can be drawn on the real network:
+
+            beyond_goal  first = route n -> L,     second = route goal -> L
+            behind_you   first = route L -> goal,  second = route L -> n
+
+        max(step["bound"]) over the steps, floored at 0, equals self(node).
+        """
+        table = self.table
+        steps = []
+        for i in range(len(table)):
+            options = []
+            d_to = table.dist_to[i].get(node)
+            if d_to is not None and self.to_goal_max[i] != math.inf:
+                g = self.to_goal_arg[i]
+                options.append({
+                    "via": "beyond_goal", "first": d_to, "second": self.to_goal_max[i],
+                    "bound": d_to - self.to_goal_max[i],
+                    "first_path": walk(table.parent_to[i], node) if table.parent_to else [],
+                    "second_path": walk(table.parent_to[i], g) if table.parent_to else [],
+                })
+            d_from = table.dist_from[i].get(node)
+            if d_from is not None and self.from_goal_min[i] != -math.inf:
+                g = self.from_goal_arg[i]
+                options.append({
+                    "via": "behind_you", "first": self.from_goal_min[i], "second": d_from,
+                    "bound": self.from_goal_min[i] - d_from,
+                    "first_path": walk(table.parent_from[i], g)[::-1] if table.parent_from else [],
+                    "second_path": walk(table.parent_from[i], node)[::-1] if table.parent_from else [],
+                })
+            if not options:
+                continue
+            best = max(options, key=lambda o: o["bound"])   # ties: beyond_goal, as in explain
+            steps.append({"landmark": table.landmarks[i], **best})
+        return steps
 
     def __call__(self, node: Node) -> float:
         """The ALT lower bound on the cost from `node` to the goal set."""
@@ -242,16 +311,20 @@ def build_table(adjacency: Adjacency, cost_fn: CostFn,
                 count: int = DEFAULT_LANDMARKS) -> LandmarkTable:
     """Choose landmarks and run the 2k Dijkstras that define the heuristic."""
     chosen = select_landmarks(adjacency, cost_fn, count)
-    dist_from = tuple(dijkstra(adjacency, [L], cost_fn) for L in chosen)
-    dist_to = tuple(dijkstra(adjacency, [L], cost_fn, reverse=True) for L in chosen)
+    parent_from = tuple({} for _ in chosen)
+    parent_to = tuple({} for _ in chosen)
+    dist_from = tuple(dijkstra(adjacency, [L], cost_fn, parents=parent_from[i])
+                      for i, L in enumerate(chosen))
+    dist_to = tuple(dijkstra(adjacency, [L], cost_fn, reverse=True, parents=parent_to[i])
+                    for i, L in enumerate(chosen))
     symmetric = all(
         a.keys() == b.keys() and all(abs(a[n] - b[n]) <= 1e-9 for n in a)
         for a, b in zip(dist_from, dist_to)
     )
-    return LandmarkTable(tuple(chosen), dist_from, dist_to, symmetric)
+    return LandmarkTable(tuple(chosen), dist_from, dist_to, symmetric, parent_from, parent_to)
 
 
 __all__ = [
     "DEFAULT_LANDMARKS", "GoalBound", "LandmarkTable",
-    "build_table", "dijkstra", "select_landmarks",
+    "build_table", "dijkstra", "select_landmarks", "walk",
 ]

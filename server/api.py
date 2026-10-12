@@ -79,6 +79,20 @@ def _heuristic(query: dict, _body: dict) -> dict:
     return {"goal": goal_id, "scenario": graph.scenario, **view}
 
 
+def _landmark_calc(query: dict, _body: dict) -> dict:
+    """Step-by-step ALT calculation of h for one node: ?goal=&station=&line=."""
+    graph = engine.get_graph(_one(query, "scenario", "operating"))
+    goal_id = _one(query, "goal", "")
+    engine.require_stations(graph, goal_id)
+    weights = engine.build_weights({
+        key: _one(query, f"w_{key}", str(default))
+        for key, default in (("time", 1.0), ("cost", 0.0), ("transit", 0.0))
+    })
+    node = (_one(query, "station", ""), _one(query, "line", ""))
+    return {"scenario": graph.scenario,
+            **engine.landmark_calculation(graph, goal_id, node, weights)}
+
+
 def _bounded_int(body: dict, key: str, default: int, low: int, high: int) -> int:
     """Read an int knob and clamp-check it.
 
@@ -206,6 +220,7 @@ ROUTES: dict[tuple[str, str], Callable[[dict, dict], dict]] = {
     ("GET", "/api/meta"): _meta,
     ("GET", "/api/network"): _network,
     ("GET", "/api/heuristic"): _heuristic,
+    ("GET", "/api/landmark_calc"): _landmark_calc,
     ("POST", "/api/search"): _search,
     ("POST", "/api/trace"): _trace,
     ("POST", "/api/compare"): _compare,

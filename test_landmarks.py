@@ -363,6 +363,66 @@ class ExplainTest(unittest.TestCase):
         self.assertEqual(seen_via, {"beyond_goal", "behind_you"})
 
 
+class BreakdownTest(unittest.TestCase):
+    """breakdown() feeds the step-by-step animation, which draws each route on
+    the map and prints its length. Both must be true, not merely plausible."""
+
+    def test_max_of_the_steps_is_the_bound(self) -> None:
+        graph = GRAPHS["operating"]
+        for weights in (Weights(time=1.0), Weights(time=1.0, cost=30.0)):
+            for goal_id in ("BL01", "E23", "A1"):
+                bound = GoalBound.build(graph.landmark_table(weights), graph.start_nodes(goal_id))
+                for node in list(graph.adjacency)[::7]:
+                    steps = bound.breakdown(node)
+                    self.assertEqual(len(steps), len(graph.landmark_table(weights)))
+                    self.assertAlmostEqual(max(0.0, max(st["bound"] for st in steps)), bound(node),
+                                           places=9, msg=(goal_id, node))
+                    for st in steps:
+                        self.assertAlmostEqual(st["first"] - st["second"], st["bound"], places=9)
+
+    def test_every_drawn_route_is_real_and_as_long_as_its_label(self) -> None:
+        """Walk each route edge by edge: consecutive nodes must be adjacent and
+        the summed weighted cost must equal the distance printed beside it --
+        under the directed fare metric too, where 'to' and 'from' differ."""
+        graph = GRAPHS["operating"]
+        for weights in (Weights(time=1.0), Weights(time=1.0, cost=30.0)):
+            cost_fn = graph.edge_weight_fn(weights)
+
+            def length(path) -> float:
+                total = 0.0
+                for a, b in zip(path, path[1:]):
+                    steps = [cost_fn(a, b, raw, kind) for nb, raw, kind in graph.neighbors(a) if nb == b]
+                    self.assertTrue(steps, f"{a} -> {b} is not an edge")
+                    total += min(steps)
+                return total
+
+            for goal_id in ("BL01", "A1"):
+                bound = GoalBound.build(graph.landmark_table(weights), graph.start_nodes(goal_id))
+                for node in list(graph.adjacency)[::23]:
+                    for st in bound.breakdown(node):
+                        L = st["landmark"]
+                        if st["via"] == "beyond_goal":   # n -> L and goal -> L
+                            self.assertEqual((st["first_path"][0], st["first_path"][-1]), (node, L))
+                            self.assertEqual(st["second_path"][-1], L)
+                            self.assertEqual(st["second_path"][0][0], goal_id)
+                        else:                            # L -> goal and L -> n
+                            self.assertEqual(st["first_path"][0], L)
+                            self.assertEqual(st["first_path"][-1][0], goal_id)
+                            self.assertEqual((st["second_path"][0], st["second_path"][-1]), (L, node))
+                        self.assertAlmostEqual(length(st["first_path"]), st["first"], delta=1e-6)
+                        self.assertAlmostEqual(length(st["second_path"]), st["second"], delta=1e-6)
+
+    def test_the_tight_case_is_visible_in_the_route(self) -> None:
+        """Khu Khot -> Tha Phra: the route to Lak Song passes through the goal,
+        which is exactly why the bound is exact. The animation relies on it."""
+        graph = GRAPHS["operating"]
+        bound = GoalBound.build(graph.landmark_table(Weights()), graph.start_nodes("BL01"))
+        lak = next(st for st in bound.breakdown(("N24", "SUKHUMVIT")) if st["landmark"][0] == "BL39")
+        self.assertEqual(lak["via"], "beyond_goal")
+        self.assertIn("BL01", [station for station, _ in lak["first_path"]])
+        self.assertAlmostEqual(lak["bound"] / 60, 76.7, places=1)
+
+
 # --------------------------------------------------------------------------- #
 # 6. preprocessing, caching, determinism
 # --------------------------------------------------------------------------- #

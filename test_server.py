@@ -392,6 +392,29 @@ class HeuristicTest(ApiTestCase):
         self.assertEqual(self.get("/api/heuristic?goal=BL01&w_time=-1")[0], 400)
         self.assertEqual(self.get("/api/heuristic?goal=BL01&w_time=0&w_cost=0&w_transit=0")[0], 400)
 
+    def test_landmark_calc_steps_through_every_landmark(self) -> None:
+        status, body = self.get(
+            "/api/landmark_calc?scenario=operating&goal=BL01&station=N24&line=SUKHUMVIT")
+        self.assertEqual(status, 200)
+        self.assertEqual(len(body["steps"]), 6)
+        self.assertEqual(body["source"], "landmark")
+        best = body["steps"][body["best"]]
+        self.assertEqual(best["landmark"], ["BL39", "BLUE"])
+        self.assertAlmostEqual(body["h"], max(step["bound"] for step in body["steps"]), places=6)
+        self.assertIn("BL01", best["first_path"])             # the route runs through the goal
+        self.assertEqual(best["first_path"][0], "N24")
+        self.assertEqual(best["first_path"][-1], "BL39")
+        # and it agrees with the inspector's one-line explanation
+        _s, view = self.get("/api/heuristic?scenario=operating&goal=BL01&algorithm=astar_landmark")
+        self.assertAlmostEqual(view["explain"]["N24|SUKHUMVIT"]["h"], body["h"], places=6)
+
+    def test_landmark_calc_at_the_goal_and_bad_input(self) -> None:
+        _s, body = self.get("/api/landmark_calc?goal=BL01&station=BL01&line=BLUE")
+        self.assertEqual(body["source"], "goal")
+        self.assertIsNone(body["best"])
+        self.assertEqual(self.get("/api/landmark_calc?goal=BL01&station=N24&line=BLUE")[0], 400)
+        self.assertEqual(self.get("/api/landmark_calc?goal=NOPE&station=N24&line=SUKHUMVIT")[0], 400)
+
     def test_trace_reports_the_weights_it_ran_with(self) -> None:
         _status, trace = self.post("/api/trace", {
             "start": "N24", "goal": "BL01", "weights": {"time": 1, "cost": 30}})

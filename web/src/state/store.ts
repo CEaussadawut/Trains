@@ -1,8 +1,8 @@
 import { create } from "zustand";
 import { api, ApiError } from "../api/client";
 import type {
-  Algorithm, ComparePayload, HeuristicPayload, Line, Meta, Network, Scenario, Station,
-  TracePayload, Weights,
+  Algorithm, ComparePayload, HeuristicPayload, LandmarkCalcPayload, Line, Meta, Network,
+  Scenario, Station, TracePayload, Weights,
 } from "../api/types";
 import { buildLayouts, type Layouts } from "../map/layouts";
 import { Replay, type VisualState } from "../map/replay";
@@ -40,6 +40,13 @@ interface State {
   heuristic: HeuristicPayload | null;
   showHeuristic: boolean;
 
+  /** A* + ALT: the step-by-step calculation of h for one node. calcStep runs
+   *  0..steps.length-1 over the landmarks; steps.length is the result. */
+  calc: LandmarkCalcPayload | null;
+  calcStep: number;
+  calcPlaying: boolean;
+  calcLoading: boolean;
+
   layoutT: number;
   hovered: string | null;
 
@@ -60,6 +67,10 @@ interface State {
   setSpeed: (speed: number) => void;
   setLayoutT: (t: number) => void;
   toggleHeuristic: () => void;
+  startCalc: (node: [string, string]) => Promise<void>;
+  setCalcStep: (step: number) => void;
+  setCalcPlaying: (playing: boolean) => void;
+  stopCalc: () => void;
   setHovered: (id: string | null) => void;
   visual: () => VisualState | null;
 }
@@ -97,6 +108,10 @@ export const useStore = create<State>((set, get) => ({
   compare: null,
   heuristic: null,
   showHeuristic: false,
+  calc: null,
+  calcStep: 0,
+  calcPlaying: false,
+  calcLoading: false,
 
   layoutT: 0,
   hovered: null,
@@ -159,7 +174,7 @@ export const useStore = create<State>((set, get) => ({
   async run() {
     const { scenario, algorithm, start, goal, weights, beamWidth, depthLimit, maxEvents } = get();
     if (!start || !goal) return;
-    set({ running: true, error: null, playing: false });
+    set({ running: true, error: null, playing: false, calc: null, calcPlaying: false });
     try {
       const [trace, heuristic] = await Promise.all([
         api.trace({
@@ -198,6 +213,8 @@ export const useStore = create<State>((set, get) => ({
   setStep(step) {
     const replay = get().replay;
     if (!replay) return;
+    // a calculation belongs to one node; moving the playback abandons it
+    if (get().calc && step !== get().step) set({ calc: null, calcPlaying: false });
     set({ step: Math.max(-1, Math.min(step, replay.length - 1)) });
   },
 
@@ -215,6 +232,33 @@ export const useStore = create<State>((set, get) => ({
   setSpeed: (speed) => set({ speed }),
   setLayoutT: (layoutT) => set({ layoutT }),
   toggleHeuristic: () => set({ showHeuristic: !get().showHeuristic }),
+
+  async startCalc(node) {
+    const { trace, weights } = get();
+    if (!trace) return;
+    set({ playing: false, calcLoading: true, error: null });
+    try {
+      const calc = await api.landmarkCalc(trace.scenario, trace.goal, node, trace.weights ?? weights);
+      set({ calc, calcStep: 0, calcPlaying: true, calcLoading: false });
+    } catch (error) {
+      set({ calcLoading: false, error: describe(error) });
+    }
+  },
+
+  setCalcStep(step) {
+    const calc = get().calc;
+    if (!calc) return;
+    set({ calcStep: Math.max(0, Math.min(step, calc.steps.length)) });
+  },
+
+  setCalcPlaying(playing) {
+    const { calc, calcStep } = get();
+    if (!calc) return;
+    if (playing && calcStep >= calc.steps.length) set({ calcStep: 0 });
+    set({ calcPlaying: playing });
+  },
+
+  stopCalc: () => set({ calc: null, calcPlaying: false }),
   setHovered: (hovered) => set({ hovered }),
 
   visual() {
